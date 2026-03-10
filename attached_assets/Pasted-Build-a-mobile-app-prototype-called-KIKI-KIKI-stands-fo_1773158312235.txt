@@ -1,0 +1,149 @@
+Build a mobile app prototype called KIKI.
+
+KIKI stands for “Kreating Infrastructure for Kreative Independence”.
+
+Concept:
+KIKI is a discovery-first fashion marketplace focused on independent fashion brands and vintage shops. It is designed to help small businesses grow by giving them a scrollable, shoppable app presence without needing a full website.
+
+Main goals:
+- Let users scroll through products in a visually appealing full-width feed
+- Let users discover small independent shops and vintage stores
+- Let users enter a shop profile and browse all of its products like scrolling through a rack
+- Let users save products, follow shops, follow other users, and recommend products to friends
+- Let users message shops about products
+- Let shops create accounts, upload products, and manage incoming orders
+
+Build this as an Expo React Native app with Supabase backend.
+
+Important:
+This is a working prototype for a university project, so checkout can be mocked and shipping can be simulated with order statuses. Do not integrate Stripe or shipping APIs yet.
+
+Design direction:
+- Mobile-first app
+- Clean Apple-like minimal design
+- Mixed with vintage treasure-hunt energy
+- Large full-width image cards
+- Elegant typography
+- Neutral background
+- Smooth, premium-feeling interface
+- Fashion-focused and editorial, but simple
+
+App structure:
+
+1. Authentication
+- Sign up / log in
+- Account type selection: User or Shop
+
+2. User side
+- For You feed
+- Hidden Gems feed
+- Product detail page
+- Shop profile page
+- Saved items
+- Messages
+- Cart
+- Checkout flow (mocked)
+- Order confirmation
+- Orders page
+
+3. Shop side
+- Create shop profile
+- Upload verification info
+- If physical shop: storefront image + social account
+- If online-only shop: social account + email
+- Add product
+- Edit product
+- Orders dashboard
+- Update order status: created, label_created, shipped, delivered
+
+Core feed idea:
+- For You = personalized discovery feed
+- Hidden Gems = boosts smaller/newer shops and shops with lower exposure
+
+Product categories:
+- Outerwear
+- Tops
+- Dresses
+- Accessories
+- Footwear
+- Archive / Rare
+
+Product data fields:
+- title
+- description
+- price
+- category
+- size
+- condition
+- era
+- image
+- quantity
+- shop_id
+
+Special vintage logic:
+- vintage products can have quantity 1
+- show “Sold” when unavailable
+
+Social features:
+- Users can follow shops
+- Users can follow users
+- Users can recommend products to friends
+- Users can message shops
+- Shops cannot follow users
+- Shops can only reply to messages from users
+
+Messaging:
+- User-to-user messaging is mainly for sending products as recommendations
+- User-to-shop messaging is for product questions
+
+Main interaction:
+The core action of the app is scrolling and discovering products.
+
+Feed style:
+Use full-width Instagram-style cards, not a Pinterest grid.
+
+Each product card should show:
+- large image
+- price
+- size
+- condition
+- era
+- shop name
+- save button
+- recommend/share button
+- button to open shop
+
+Supabase schema:
+Create tables for:
+- profiles
+- shops
+- products
+- orders
+- order_items
+- follows_users
+- follows_shops
+- saved_products
+- messages
+- recommendations
+- product_events
+
+Use Supabase storage for product images and storefront images.
+
+Seed the prototype with realistic sample data:
+- 8 shops from Rome
+- 8 shops from London
+- mix of independent fashion brands and vintage shops
+- 5 to 8 products per shop
+- realistic product names, prices, sizes, eras, and conditions
+
+Navigation:
+Use bottom tab navigation for:
+- For You
+- Hidden Gems
+- Saved
+- Messages
+- Profile
+
+Need first deliverable:
+Generate the project structure, screens, Supabase schema, seed data, and a polished initial UI.
+Focus on making the prototype run cleanly and feel like a real app.
