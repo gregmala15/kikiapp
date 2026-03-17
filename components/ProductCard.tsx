@@ -8,66 +8,77 @@ import {
 } from "react-native";
 import { Image } from "expo-image";
 import { router } from "expo-router";
-import { Feather, Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import Colors from "@/constants/colors";
 import { Product, getShopById } from "@/constants/seed-data";
 import { useAppContext } from "@/contexts/AppContext";
 
 const { width } = Dimensions.get("window");
+const CARD_HEIGHT = width * 1.28;
 
 interface ProductCardProps {
   product: Product;
   shopName?: string;
+  style?: object;
 }
 
-export function ProductCard({ product, shopName }: ProductCardProps) {
-  const { isSaved, toggleSaved, addToCart } = useAppContext();
+export function ProductCard({ product, shopName, style }: ProductCardProps) {
+  const { isSaved, toggleSaved } = useAppContext();
   const saved = isSaved(product.id);
   const shop = getShopById(product.shopId);
-  const displayShopName = shopName ?? shop?.name ?? "Unknown Shop";
+  const displayShopName = shopName ?? shop?.name ?? "";
+
+  const isSold = product.isSold || product.quantity === 0;
+  const isOneLeft = product.quantity === 1 && !isSold;
+  const isArchive = product.category === "Archive / Rare";
 
   function handleSave() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     toggleSaved(product.id);
   }
 
-  function handleAddToCart() {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    addToCart(product);
-  }
-
-  function handleOpenProduct() {
-    router.push(`/product/${product.id}`);
-  }
-
-  function handleOpenShop() {
-    router.push(`/shop/${product.shopId}`);
-  }
-
   return (
-    <Pressable onPress={handleOpenProduct} style={styles.card}>
+    <Pressable
+      style={[styles.card, style]}
+      onPress={() => router.push(`/product/${product.id}`)}
+    >
       <View style={styles.imageContainer}>
         <Image
           source={{ uri: product.imageUrl }}
           style={styles.image}
           contentFit="cover"
-          transition={200}
+          transition={300}
         />
-        {(product.isSold || product.quantity === 0) && (
-          <View style={styles.soldBadge}>
+
+        {isSold && (
+          <View style={styles.soldOverlay}>
             <Text style={styles.soldText}>SOLD</Text>
           </View>
         )}
-        {product.isVintage && (
+
+        {isOneLeft && (
+          <View style={styles.oneLeftBadge}>
+            <Text style={styles.oneLeftText}>1 LEFT</Text>
+          </View>
+        )}
+
+        {isArchive && !isOneLeft && (
+          <View style={styles.archiveBadge}>
+            <Text style={styles.archiveText}>ARCHIVE</Text>
+          </View>
+        )}
+
+        {product.isVintage && !isArchive && !isOneLeft && (
           <View style={styles.vintageBadge}>
             <Text style={styles.vintageText}>VINTAGE</Text>
           </View>
         )}
+
         <Pressable
-          style={[styles.saveBtn, saved && styles.saveBtnActive]}
+          style={[styles.saveButton, saved && styles.saveButtonActive]}
           onPress={handleSave}
-          hitSlop={8}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <Ionicons
             name={saved ? "heart" : "heart-outline"}
@@ -78,47 +89,28 @@ export function ProductCard({ product, shopName }: ProductCardProps) {
       </View>
 
       <View style={styles.info}>
-        <View style={styles.infoTop}>
-          <View style={styles.details}>
-            <View style={styles.metaRow}>
-              <Text style={styles.price}>£{product.price}</Text>
-              <Text style={styles.dot}>·</Text>
-              <Text style={styles.meta}>{product.size}</Text>
-              <Text style={styles.dot}>·</Text>
-              <Text style={styles.meta}>{product.condition}</Text>
-            </View>
-            {product.era !== "Contemporary" && (
-              <Text style={styles.era}>{product.era}</Text>
-            )}
-            <Text style={styles.title} numberOfLines={1}>
-              {product.title}
-            </Text>
-          </View>
-
-          <Pressable
-            style={({ pressed }) => [
-              styles.cartBtn,
-              { opacity: pressed ? 0.7 : 1 },
-              product.quantity === 0 && styles.cartBtnDisabled,
-            ]}
-            onPress={handleAddToCart}
-            disabled={product.quantity === 0}
-          >
-            <Feather
-              name="shopping-bag"
-              size={16}
-              color={product.quantity === 0 ? Colors.textTertiary : "#fff"}
-            />
-          </Pressable>
+        {displayShopName ? (
+          <Text style={styles.shopName} numberOfLines={1}>
+            {displayShopName}
+          </Text>
+        ) : null}
+        <View style={styles.titleRow}>
+          <Text style={styles.title} numberOfLines={2}>
+            {product.title}
+          </Text>
+          <Text style={styles.price}>£{product.price}</Text>
         </View>
-
-        <Pressable style={styles.shopRow} onPress={handleOpenShop}>
-          <Feather name="chevron-right" size={13} color={Colors.textTertiary} />
-          <Text style={styles.shopName}>{displayShopName}</Text>
-          {shop && (
-            <Text style={styles.shopCity}>· {shop.city}</Text>
+        <View style={styles.metaRow}>
+          <Text style={styles.meta}>{product.size}</Text>
+          <Text style={styles.metaDot}>·</Text>
+          <Text style={styles.meta}>{product.condition}</Text>
+          {product.era && product.era !== "Contemporary" && (
+            <>
+              <Text style={styles.metaDot}>·</Text>
+              <Text style={styles.meta}>{product.era}</Text>
+            </>
           )}
-        </Pressable>
+        </View>
       </View>
     </Pressable>
   );
@@ -126,135 +118,135 @@ export function ProductCard({ product, shopName }: ProductCardProps) {
 
 const styles = StyleSheet.create({
   card: {
-    width: width - 32,
-    marginHorizontal: 16,
-    marginBottom: 28,
     backgroundColor: Colors.surface,
-    borderRadius: 12,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    marginBottom: 2,
   },
   imageContainer: {
     width: "100%",
-    height: width - 32,
+    height: CARD_HEIGHT,
     backgroundColor: Colors.card,
   },
   image: {
     width: "100%",
     height: "100%",
   },
-  soldBadge: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(0,0,0,0.55)",
+  soldOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.45)",
     alignItems: "center",
     justifyContent: "center",
   },
   soldText: {
-    fontFamily: "Inter_700Bold",
-    fontSize: 22,
     color: "#fff",
-    letterSpacing: 6,
+    fontFamily: "Inter_700Bold",
+    fontSize: 18,
+    letterSpacing: 4,
   },
-  vintageBadge: {
+  oneLeftBadge: {
     position: "absolute",
-    top: 14,
+    bottom: 14,
     left: 14,
     backgroundColor: Colors.accent,
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 3,
+    borderRadius: 2,
   },
-  vintageText: {
-    fontFamily: "Inter_600SemiBold",
-    fontSize: 9,
+  oneLeftText: {
     color: "#fff",
+    fontFamily: "Inter_700Bold",
+    fontSize: 10,
     letterSpacing: 1.5,
   },
-  saveBtn: {
+  archiveBadge: {
     position: "absolute",
-    top: 12,
-    right: 12,
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: "rgba(0,0,0,0.35)",
+    bottom: 14,
+    left: 14,
+    backgroundColor: Colors.text,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 2,
+  },
+  archiveText: {
+    color: "#fff",
+    fontFamily: "Inter_700Bold",
+    fontSize: 10,
+    letterSpacing: 1.5,
+  },
+  vintageBadge: {
+    position: "absolute",
+    bottom: 14,
+    left: 14,
+    backgroundColor: Colors.accent,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 2,
+  },
+  vintageText: {
+    color: "#fff",
+    fontFamily: "Inter_700Bold",
+    fontSize: 10,
+    letterSpacing: 1.5,
+  },
+  saveButton: {
+    position: "absolute",
+    top: 14,
+    right: 14,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(0,0,0,0.25)",
     alignItems: "center",
     justifyContent: "center",
   },
-  saveBtnActive: {
-    backgroundColor: "rgba(255,255,255,0.9)",
+  saveButtonActive: {
+    backgroundColor: "rgba(255,255,255,0.92)",
   },
   info: {
-    padding: 14,
-    gap: 10,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 18,
   },
-  infoTop: {
+  shopName: {
+    fontFamily: "Inter_500Medium",
+    fontSize: 11,
+    color: Colors.textTertiary,
+    letterSpacing: 1,
+    textTransform: "uppercase",
+    marginBottom: 4,
+  },
+  titleRow: {
     flexDirection: "row",
     alignItems: "flex-start",
     justifyContent: "space-between",
     gap: 12,
   },
-  details: { flex: 1, gap: 3 },
-  metaRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    flexWrap: "wrap",
+  title: {
+    flex: 1,
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 15,
+    color: Colors.text,
+    letterSpacing: -0.2,
+    lineHeight: 21,
   },
   price: {
     fontFamily: "Inter_700Bold",
-    fontSize: 17,
+    fontSize: 15,
     color: Colors.text,
+    letterSpacing: -0.3,
   },
-  dot: {
-    fontFamily: "Inter_400Regular",
-    fontSize: 14,
-    color: Colors.textTertiary,
+  metaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 5,
+    gap: 4,
   },
   meta: {
     fontFamily: "Inter_400Regular",
-    fontSize: 13,
-    color: Colors.textSecondary,
-  },
-  era: {
-    fontFamily: "PlayfairDisplay_400Regular_Italic",
-    fontSize: 12,
-    color: Colors.accent,
-  },
-  title: {
-    fontFamily: "Inter_500Medium",
-    fontSize: 14,
-    color: Colors.text,
-    marginTop: 2,
-  },
-  cartBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: Colors.text,
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0,
-  },
-  cartBtnDisabled: {
-    backgroundColor: Colors.card,
-  },
-  shopRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  shopName: {
-    fontFamily: "Inter_500Medium",
     fontSize: 12,
     color: Colors.textSecondary,
+    textTransform: "capitalize",
   },
-  shopCity: {
+  metaDot: {
     fontFamily: "Inter_400Regular",
     fontSize: 12,
     color: Colors.textTertiary,
