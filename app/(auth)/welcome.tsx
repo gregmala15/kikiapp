@@ -64,7 +64,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#000",
   },
   overlay: {
-    background: "transparent",
     backgroundColor: "rgba(0,0,0,0.45)",
   },
   content: {
