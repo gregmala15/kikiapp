@@ -1,0 +1,307 @@
+import React, { useState, useCallback } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  SafeAreaView,
+  TouchableOpacity,
+  RefreshControl,
+  Dimensions,
+} from 'react-native';
+import { Image } from 'react-native';
+import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Colors } from '../../constants/Colors';
+import { Product, ProductCategory } from '../../types';
+import { getHiddenGemsFeed, formatPrice } from '../../lib/mockData';
+import ProductCardSmall from '../../components/ProductCardSmall';
+import CategoryFilter from '../../components/CategoryFilter';
+import { useSaved } from '../../context/SavedContext';
+
+const { width } = Dimensions.get('window');
+const blurhash = 'L6PZfSi_.AyE_3t7t7R**0o#DgR4';
+
+function FeaturedGem({ product }: { product: Product }) {
+  const router = useRouter();
+  const { isSaved, toggleSave } = useSaved();
+  const saved = isSaved(product.id);
+
+  return (
+    <TouchableOpacity
+      style={styles.featured}
+      activeOpacity={0.96}
+      onPress={() => router.push(`/product/${product.id}`)}
+    >
+      <Image
+        source={{ uri: product.images[0] }}
+        style={styles.featuredImage}
+        contentFit="cover"
+        placeholder={blurhash}
+        transition={400}
+      />
+      <LinearGradient
+        colors={['rgba(15,15,13,0)', 'rgba(15,15,13,0.7)', 'rgba(15,15,13,0.95)']}
+        style={styles.featuredGradient}
+      />
+      <View style={styles.featuredContent}>
+        <View style={styles.gemLabel}>
+          <Ionicons name="diamond" size={10} color={Colors.gemsAccent} />
+          <Text style={styles.gemLabelText}>GEM OF THE DAY</Text>
+        </View>
+        <Text style={styles.featuredTitle}>{product.title}</Text>
+        {product.shop && (
+          <Text style={styles.featuredShop}>{product.shop.name} · {product.shop.city}</Text>
+        )}
+        <Text style={styles.featuredPrice}>
+          {formatPrice(product.price, product.currency)}
+        </Text>
+      </View>
+      <TouchableOpacity
+        style={[styles.featuredSave, saved && styles.featuredSaveActive]}
+        onPress={(e) => { e.stopPropagation(); toggleSave(product); }}
+      >
+        <Ionicons
+          name={saved ? 'heart' : 'heart-outline'}
+          size={20}
+          color={saved ? Colors.error : '#fff'}
+        />
+      </TouchableOpacity>
+    </TouchableOpacity>
+  );
+}
+
+export default function HiddenGems() {
+  const [category, setCategory] = useState<'all' | ProductCategory>('all');
+  const [refreshing, setRefreshing] = useState(false);
+  const [products, setProducts] = useState<Product[]>(() => getHiddenGemsFeed());
+
+  const featured = products[0];
+  const rest = products.slice(1);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    setTimeout(() => {
+      setProducts(getHiddenGemsFeed(category === 'all' ? undefined : category));
+      setRefreshing(false);
+    }, 700);
+  }, [category]);
+
+  function handleCategoryChange(cat: 'all' | ProductCategory) {
+    setCategory(cat);
+    setProducts(getHiddenGemsFeed(cat === 'all' ? undefined : cat));
+  }
+
+  // Pair items for 2-column grid
+  const pairs: [Product, Product | null][] = [];
+  for (let i = 0; i < rest.length; i += 2) {
+    pairs.push([rest[i], rest[i + 1] ?? null]);
+  }
+
+  const renderHeader = () => (
+    <View>
+      {/* Dark header */}
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.headerTitle}>Hidden Gems</Text>
+          <Text style={styles.headerSub}>Rare finds. Small shops. Big stories.</Text>
+        </View>
+        <View style={styles.headerIcon}>
+          <Ionicons name="diamond" size={22} color={Colors.gemsAccent} />
+        </View>
+      </View>
+
+      <CategoryFilter selected={category} onSelect={handleCategoryChange} dark />
+
+      {featured && <FeaturedGem product={featured} />}
+
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>More Gems</Text>
+        <Text style={styles.sectionCount}>{rest.length} pieces</Text>
+      </View>
+    </View>
+  );
+
+  return (
+    <View style={styles.root}>
+      <SafeAreaView style={styles.safeTop}>
+        <View style={styles.topBar}>
+          <Text style={styles.wordmark}>KIKI</Text>
+          <Ionicons name="diamond-outline" size={22} color={Colors.gemsAccent} />
+        </View>
+      </SafeAreaView>
+
+      <FlatList
+        data={pairs}
+        keyExtractor={(_, index) => index.toString()}
+        renderItem={({ item: [left, right] }) => (
+          <View style={styles.row}>
+            <ProductCardSmall product={left} />
+            {right ? (
+              <ProductCardSmall product={right} />
+            ) : (
+              <View style={{ flex: 1 }} />
+            )}
+          </View>
+        )}
+        ListHeaderComponent={renderHeader}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={Colors.gemsAccent}
+          />
+        }
+        ItemSeparatorComponent={() => <View style={{ height: 3 }} />}
+        contentContainerStyle={styles.listContent}
+      />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: Colors.gemsBackground,
+  },
+  safeTop: {
+    backgroundColor: Colors.gemsBackground,
+  },
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#222',
+  },
+  wordmark: {
+    fontSize: 20,
+    fontWeight: '900',
+    letterSpacing: 4,
+    color: Colors.gemsAccent,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: 24,
+    paddingBottom: 4,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: Colors.textInverse,
+    letterSpacing: -0.8,
+  },
+  headerSub: {
+    fontSize: 13,
+    color: '#666',
+    marginTop: 2,
+  },
+  headerIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: '#333',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  // Featured gem
+  featured: {
+    height: width * 1.2,
+    marginTop: 12,
+    marginBottom: 0,
+    backgroundColor: Colors.gemsSurface,
+  },
+  featuredImage: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  featuredGradient: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  featuredContent: {
+    position: 'absolute',
+    bottom: 20,
+    left: 16,
+    right: 64,
+    gap: 6,
+  },
+  gemLabel: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginBottom: 4,
+  },
+  gemLabelText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: Colors.gemsAccent,
+    letterSpacing: 2,
+  },
+  featuredTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: Colors.textInverse,
+    letterSpacing: -0.4,
+    lineHeight: 26,
+  },
+  featuredShop: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.6)',
+    letterSpacing: 0.2,
+  },
+  featuredPrice: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: Colors.gemsAccent,
+    marginTop: 4,
+  },
+  featuredSave: {
+    position: 'absolute',
+    bottom: 22,
+    right: 16,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  featuredSaveActive: {
+    backgroundColor: 'rgba(255,255,255,0.9)',
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: 24,
+    paddingBottom: 12,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: Colors.textInverse,
+    letterSpacing: -0.3,
+  },
+  sectionCount: {
+    fontSize: 12,
+    color: '#555',
+    letterSpacing: 0.2,
+  },
+  // Grid
+  row: {
+    flexDirection: 'row',
+    gap: 3,
+    paddingHorizontal: 0,
+  },
+  listContent: {
+    paddingBottom: 100,
+  },
+});
