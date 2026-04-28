@@ -27,6 +27,8 @@ export interface Order {
   address: string;
 }
 
+export type ParticipantType = "user" | "shop";
+
 export interface Message {
   id: string;
   fromId: string;
@@ -37,12 +39,15 @@ export interface Message {
   productId?: string;
   timestamp: string;
   isProductRecommendation?: boolean;
+  senderType: ParticipantType;
+  receiverType: ParticipantType;
 }
 
 export interface Conversation {
   id: string;
   participantIds: string[];
   participantNames: string[];
+  participantTypes: ParticipantType[];
   shopId?: string;
   lastMessage?: string;
   lastTimestamp?: string;
@@ -95,12 +100,14 @@ interface AppContextValue {
   sendMessage: (params: {
     toId: string;
     toName: string;
+    toType?: ParticipantType;
     content: string;
     shopId?: string;
     productId?: string;
     isProductRecommendation?: boolean;
-  }) => Promise<void>;
+  }) => Promise<string>;
   getConversationMessages: (conversationId: string) => Message[];
+  getOrComputeConvId: (otherId: string) => string;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -345,9 +352,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  function getOrComputeConvId(otherId: string): string {
+    if (!user) return "";
+    return [user.id, otherId].sort().join("_");
+  }
+
   async function sendMessage({
     toId,
     toName,
+    toType = "user",
     content,
     shopId,
     productId,
@@ -355,13 +368,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }: {
     toId: string;
     toName: string;
+    toType?: ParticipantType;
     content: string;
     shopId?: string;
     productId?: string;
     isProductRecommendation?: boolean;
-  }) {
-    if (!user) return;
+  }): Promise<string> {
+    if (!user) return "";
+    const senderType: ParticipantType = userShop ? "shop" : "user";
     const convId = [user.id, toId].sort().join("_");
+    const existingConv = conversations.find((c) => c.id === convId);
+
+    // Rule: shops can only reply, not initiate.
+    if (senderType === "shop" && !existingConv) {
+      return "";
+    }
+
+    // Receiver type is whoever is on the other side, regardless of whether a
+    // shop context (shopId) is attached to the conversation.
+    const receiverType: ParticipantType = toType;
+
     const msg: Message = {
       id: `msg-${Date.now()}`,
       fromId: user.id,
@@ -371,18 +397,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
       content,
       productId,
       isProductRecommendation,
+      senderType,
+      receiverType,
       timestamp: new Date().toISOString(),
     };
     const newMsgs = [...messages, msg];
     setMessages(newMsgs);
     await persist("messages", newMsgs);
 
-    const existingConv = conversations.find((c) => c.id === convId);
     if (!existingConv) {
+      const otherType: ParticipantType = receiverType;
       const newConv: Conversation = {
         id: convId,
         participantIds: [user.id, toId],
         participantNames: [user.username, toName],
+        participantTypes: [senderType, otherType],
         shopId,
         lastMessage: content,
         lastTimestamp: msg.timestamp,
@@ -400,6 +429,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setConversations(newConvs);
       await persist("conversations", newConvs);
     }
+    return convId;
   }
 
   function getConversationMessages(conversationId: string): Message[] {
@@ -442,6 +472,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         messages,
         sendMessage,
         getConversationMessages,
+        getOrComputeConvId,
       }}
     >
       {children}

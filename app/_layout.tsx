@@ -55,6 +55,14 @@ function RootLayoutNav() {
       <Stack.Screen name="orders" options={{ headerShown: false }} />
       <Stack.Screen name="conversation/[id]" options={{ headerShown: false }} />
       <Stack.Screen
+        name="new-message"
+        options={{ headerShown: false, presentation: "modal" }}
+      />
+      <Stack.Screen
+        name="share-product"
+        options={{ headerShown: false, presentation: "modal" }}
+      />
+      <Stack.Screen
         name="shop-setup"
         options={{ headerShown: false, presentation: "modal" }}
       />

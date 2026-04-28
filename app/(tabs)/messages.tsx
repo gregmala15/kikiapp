@@ -15,6 +15,8 @@ import { useAppContext, Conversation } from "@/contexts/AppContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { getShopById, getProductById } from "@/constants/seed-data";
 
+const SHOP_ACCOUNT_TYPES = ["shop"];
+
 function formatTime(iso: string) {
   const d = new Date(iso);
   const now = new Date();
@@ -31,6 +33,11 @@ export default function MessagesScreen() {
   const { conversations } = useAppContext();
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
+  const isShopAccount = user
+    ? SHOP_ACCOUNT_TYPES.includes(user.accountType ?? "")
+    : false;
+
+  const visibleConvs = conversations.filter((c) => !!c.lastMessage);
 
   function getConvName(conv: Conversation): string {
     if (!user) return "Unknown";
@@ -60,10 +67,19 @@ export default function MessagesScreen() {
         ]}
       >
         <Text style={styles.title}>Messages</Text>
+        {!isShopAccount && (
+          <Pressable
+            style={styles.composeBtn}
+            onPress={() => router.push("/new-message")}
+            testID="compose-message"
+          >
+            <Feather name="edit-3" size={18} color={Colors.text} />
+          </Pressable>
+        )}
       </View>
 
       <FlatList
-        data={conversations}
+        data={visibleConvs}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <Pressable
@@ -118,6 +134,9 @@ export default function MessagesScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   header: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "space-between",
     paddingHorizontal: 20,
     paddingBottom: 14,
     borderBottomWidth: 1,
@@ -127,6 +146,15 @@ const styles = StyleSheet.create({
     fontFamily: "PlayfairDisplay_700Bold",
     fontSize: 28,
     color: Colors.text,
+  },
+  composeBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    alignItems: "center",
+    justifyContent: "center",
   },
   convRow: {
     flexDirection: "row",
