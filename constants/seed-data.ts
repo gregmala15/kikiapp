@@ -1463,6 +1463,70 @@ export const SEED_RECOMMENDATIONS: ProductRecommendation[] = [
   },
 ];
 
+// SEED_USER_LIKES — what each seeded community user has saved/liked.
+// Used by the Style Blend feature: when the current user adds a friend as
+// a "style influence", their feed gets boosted with these products.
+// Assignments are deterministic and reflect each user's bio so the influence
+// feels personal (e.g. Mira → Y2K era, Luca → Archive / Rare).
+export const SEED_USER_LIKES: Record<string, string[]> = {
+  "user-aria": [
+    "prod-001",
+    "prod-007",
+    "prod-014",
+    "prod-022",
+    "prod-031",
+    "prod-038",
+    "prod-045",
+    "prod-050",
+  ],
+  "user-luca": [
+    "prod-003",
+    "prod-009",
+    "prod-016",
+    "prod-024",
+    "prod-033",
+    "prod-040",
+    "prod-047",
+    "prod-053",
+  ],
+  "user-effie": [
+    "prod-002",
+    "prod-008",
+    "prod-018",
+    "prod-026",
+    "prod-035",
+    "prod-042",
+    "prod-049",
+    "prod-055",
+  ],
+  "user-noah": [
+    "prod-004",
+    "prod-011",
+    "prod-019",
+    "prod-028",
+    "prod-036",
+    "prod-043",
+    "prod-051",
+    "prod-057",
+  ],
+  "user-mira": [
+    "prod-005",
+    "prod-013",
+    "prod-021",
+    "prod-029",
+    "prod-037",
+    "prod-044",
+    "prod-052",
+    "prod-058",
+  ],
+};
+
+// Returns the list of product IDs liked by a given seed user. Empty array if
+// the user has no recorded likes (e.g. the current user themselves).
+export function getLikesForUser(userId: string): string[] {
+  return SEED_USER_LIKES[userId] ?? [];
+}
+
 export function getProductsByShop(shopId: string): Product[] {
   return SEED_PRODUCTS.filter((p) => p.shopId === shopId);
 }

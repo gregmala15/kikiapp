@@ -17,10 +17,12 @@ import {
   getProductById,
   getRecommendationsFromUsers,
   getUserById,
+  getLikesForUser,
   SEED_USERS,
 } from "@/constants/seed-data";
 import { ProductCard } from "@/components/ProductCard";
 import { useAppContext } from "@/contexts/AppContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 const CATEGORIES = [
   "All",
@@ -36,8 +38,15 @@ type FeedMode = "foryou" | "following";
 
 export default function ForYouScreen() {
   const insets = useSafeAreaInsets();
-  const { cartCount, followedShopIds, followedUserIds, toggleFollowUser } =
-    useAppContext();
+  const { user } = useAuth();
+  const {
+    cartCount,
+    followedShopIds,
+    followedUserIds,
+    toggleFollowUser,
+    styleInfluences,
+    savedProductIds,
+  } = useAppContext();
   const params = useLocalSearchParams<{
     category?: string;
     era?: string;
@@ -116,11 +125,72 @@ export default function ForYouScreen() {
     return items.sort((a, b) => b.sortKey - a.sortKey);
   }, [followedShopIds, followedUserIds]);
 
+  // -------------------------------------------------------------------------
+  // STYLE BLEND — For You feed composition
+  // -------------------------------------------------------------------------
+  // The For You feed is a blend of three signal sources:
+  //   (a) USER PREFERENCES  — products the current user has saved themselves.
+  //                            Strongest personal signal; surfaced first.
+  //   (b) STYLE INFLUENCES  — products liked/saved by users the current user
+  //                            has toggled "Include in my feed" on.
+  //                            (style_influences storage; default weight 20.)
+  //   (c) DISCOVERY         — the rest of the catalog, so the feed never
+  //                            collapses to only known taste.
+  // Sections are concatenated in priority order (a → b → c) and de-duplicated
+  // by product id so a piece never appears twice. Category / era / size
+  // filters are applied AFTER the blend so the ordering is preserved within
+  // any active filter.
+  // -------------------------------------------------------------------------
+  const forYouFeed = useMemo<Product[]>(() => {
+    // (b) collect product ids liked by every active influence user.
+    // Defensive: only consider influences that belong to the current user
+    // — guards against stale/corrupt entries from a previous session.
+    const influenceLikedIds = new Set<string>();
+    styleInfluences
+      .filter((inf) => !user || inf.userId === user.id)
+      .forEach((inf) => {
+        getLikesForUser(inf.influenceUserId).forEach((pid) =>
+          influenceLikedIds.add(pid),
+        );
+      });
+
+    const seen = new Set<string>();
+    const blended: Product[] = [];
+
+    // (a) saved by the user — strongest personal signal
+    savedProductIds.forEach((pid) => {
+      const product = getProductById(pid);
+      if (product && !seen.has(pid)) {
+        seen.add(pid);
+        blended.push(product);
+      }
+    });
+
+    // (b) liked by influence users — the Style Blend boost
+    influenceLikedIds.forEach((pid) => {
+      if (seen.has(pid)) return;
+      const product = getProductById(pid);
+      if (product) {
+        seen.add(pid);
+        blended.push(product);
+      }
+    });
+
+    // (c) the rest of the catalog — normal discovery
+    SEED_PRODUCTS.forEach((product) => {
+      if (seen.has(product.id)) return;
+      seen.add(product.id);
+      blended.push(product);
+    });
+
+    return blended;
+  }, [styleInfluences, savedProductIds, user?.id]);
+
   const filtered = useMemo(() => {
     let list: Product[] =
       feedMode === "following"
         ? followingFeed.map((f) => f.product)
-        : SEED_PRODUCTS;
+        : forYouFeed;
 
     if (selectedCategory !== "All") {
       list = list.filter((p) => p.category === selectedCategory);
@@ -128,7 +198,7 @@ export default function ForYouScreen() {
     if (eraFilter) list = list.filter((p) => p.era === eraFilter);
     if (sizeFilter) list = list.filter((p) => p.size === sizeFilter);
     return list;
-  }, [feedMode, followingFeed, selectedCategory, eraFilter, sizeFilter]);
+  }, [feedMode, followingFeed, forYouFeed, selectedCategory, eraFilter, sizeFilter]);
 
   const recommendationByProductId = useMemo(() => {
     const map = new Map<string, string>();
@@ -283,7 +353,11 @@ export default function ForYouScreen() {
                   <Text style={styles.suggestLabel}>People to follow</Text>
                   {suggestedPeople.map((p) => (
                     <View key={p.id} style={styles.suggestRow}>
-                      <View style={styles.suggestInfo}>
+                      <Pressable
+                        style={styles.suggestInfo}
+                        onPress={() => router.push(`/user/${p.id}`)}
+                        testID={`open-user-${p.id}`}
+                      >
                         <View style={styles.suggestAvatar}>
                           <Text style={styles.suggestAvatarText}>
                             {p.fullName
@@ -296,7 +370,7 @@ export default function ForYouScreen() {
                           <Text style={styles.suggestName}>{p.fullName}</Text>
                           <Text style={styles.suggestBio}>{p.bio}</Text>
                         </View>
-                      </View>
+                      </Pressable>
                       <Pressable
                         style={styles.followBtn}
                         onPress={() => toggleFollowUser(p.id)}

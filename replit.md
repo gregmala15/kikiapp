@@ -55,6 +55,8 @@ app/
   order-confirmation.tsx → Success screen + order tracking steps
   orders.tsx             → Order history
   conversation/[id].tsx  → DM thread (product banner, message bubbles)
+  recommend/[productId].tsx → Recommend a product to followed users
+  user/[id].tsx          → Community user profile (Style Blend toggle, recently liked)
   shop-setup.tsx         → Create/edit shop profile
   add-product.tsx        → Add product to shop rack
   shop-dashboard.tsx     → Shop products + orders management

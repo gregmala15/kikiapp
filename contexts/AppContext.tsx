@@ -55,6 +55,18 @@ export interface Conversation {
   productId?: string;
 }
 
+// StyleInfluence — represents one entry in the user's "Style Blend":
+// the current user (userId) is including products that influenceUserId has
+// liked/saved into their own For You feed. weight (default 20) reserved for
+// future tuning sliders; not yet exposed in UI.
+export interface StyleInfluence {
+  userId: string;
+  influenceUserId: string;
+  weight: number;
+}
+
+export const DEFAULT_INFLUENCE_WEIGHT = 20;
+
 export interface UserShop {
   id: string;
   ownerId: string;
@@ -81,6 +93,9 @@ interface AppContextValue {
   followedUserIds: string[];
   toggleFollowUser: (userId: string) => void;
   isFollowingUser: (userId: string) => boolean;
+  styleInfluences: StyleInfluence[];
+  toggleStyleInfluence: (userId: string) => void;
+  isStyleInfluence: (userId: string) => boolean;
   cart: CartItem[];
   addToCart: (product: Product) => void;
   removeFromCart: (productId: string) => void;
@@ -122,6 +137,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [savedProductIds, setSavedProductIds] = useState<string[]>([]);
   const [followedShopIds, setFollowedShopIds] = useState<string[]>([]);
   const [followedUserIds, setFollowedUserIds] = useState<string[]>([]);
+  const [styleInfluences, setStyleInfluences] = useState<StyleInfluence[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [userShop, setUserShop] = useState<UserShop | null>(null);
@@ -151,6 +167,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setSavedProductIds([]);
       setFollowedShopIds([]);
       setFollowedUserIds([]);
+      setStyleInfluences([]);
       setCart([]);
       setOrders([]);
       setUserShop(null);
@@ -161,25 +178,31 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   async function loadAll(userId: string) {
     try {
-      const [saved, shops, users, cartData, ordersData, shopData, convsData, msgsData] =
+      const [saved, shops, users, influences, cartData, ordersData, shopData, convsData, msgsData] =
         await Promise.all([
           AsyncStorage.getItem(getKey("saved", userId)),
           AsyncStorage.getItem(getKey("follow_shops", userId)),
           AsyncStorage.getItem(getKey("follow_users", userId)),
+          AsyncStorage.getItem(getKey("style_influences", userId)),
           AsyncStorage.getItem(getKey("cart", userId)),
           AsyncStorage.getItem(getKey("orders", userId)),
           AsyncStorage.getItem(getKey("user_shop", userId)),
           AsyncStorage.getItem(getKey("conversations", userId)),
           AsyncStorage.getItem(getKey("messages", userId)),
         ]);
-      if (saved) setSavedProductIds(JSON.parse(saved));
-      if (shops) setFollowedShopIds(JSON.parse(shops));
-      if (users) setFollowedUserIds(JSON.parse(users));
-      if (cartData) setCart(JSON.parse(cartData));
-      if (ordersData) setOrders(JSON.parse(ordersData));
-      if (shopData) setUserShop(JSON.parse(shopData));
-      if (convsData) commitConversations(JSON.parse(convsData));
-      if (msgsData) commitMessages(JSON.parse(msgsData));
+      // Always overwrite state with the loaded value (or a default when the
+      // key is missing). This prevents cross-account contamination when
+      // switching users — without this, a missing key would leave the
+      // previous user's state in memory.
+      setSavedProductIds(saved ? JSON.parse(saved) : []);
+      setFollowedShopIds(shops ? JSON.parse(shops) : []);
+      setFollowedUserIds(users ? JSON.parse(users) : []);
+      setStyleInfluences(influences ? JSON.parse(influences) : []);
+      setCart(cartData ? JSON.parse(cartData) : []);
+      setOrders(ordersData ? JSON.parse(ordersData) : []);
+      setUserShop(shopData ? JSON.parse(shopData) : null);
+      commitConversations(convsData ? JSON.parse(convsData) : []);
+      commitMessages(msgsData ? JSON.parse(msgsData) : []);
     } catch (e) {
       console.error("Failed to load app data:", e);
     }
@@ -230,6 +253,40 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   function isFollowingUser(userId: string) {
     return followedUserIds.includes(userId);
+  }
+
+  // Style Blend — toggle a community user as a "style influence" for the
+  // current account. When enabled, the For You feed will boost products that
+  // the influence user has liked/saved (see SEED_USER_LIKES + buildForYouFeed).
+  // The influence is tied to the current logged-in user's id so each account
+  // maintains its own blend.
+  function toggleStyleInfluence(targetUserId: string) {
+    if (!user) return;
+    if (targetUserId === user.id) return; // can't add yourself
+    setStyleInfluences((prev) => {
+      const exists = prev.some((i) => i.influenceUserId === targetUserId);
+      const next = exists
+        ? prev.filter((i) => i.influenceUserId !== targetUserId)
+        : [
+            ...prev,
+            {
+              userId: user.id,
+              influenceUserId: targetUserId,
+              weight: DEFAULT_INFLUENCE_WEIGHT,
+            },
+          ];
+      persist("style_influences", next);
+      return next;
+    });
+  }
+
+  function isStyleInfluence(targetUserId: string) {
+    if (!user) return false;
+    // Defensive filter on userId — guards against any stale/corrupt entries
+    // that don't belong to the current account leaking into the UI.
+    return styleInfluences.some(
+      (i) => i.userId === user.id && i.influenceUserId === targetUserId,
+    );
   }
 
   function addToCart(product: Product) {
@@ -475,6 +532,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         followedUserIds,
         toggleFollowUser,
         isFollowingUser,
+        styleInfluences,
+        toggleStyleInfluence,
+        isStyleInfluence,
         cart,
         addToCart,
         removeFromCart,
