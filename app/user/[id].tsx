@@ -5,9 +5,7 @@ import {
   StyleSheet,
   Pressable,
   ScrollView,
-  Switch,
   Platform,
-  Alert,
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -27,16 +25,21 @@ import {
 } from "@/constants/seed-data";
 import { useAppContext } from "@/contexts/AppContext";
 import { useAuth } from "@/contexts/AuthContext";
+import {
+  InfluenceSelector,
+  InfluenceSelection,
+} from "@/components/InfluenceSelector";
 
 // -----------------------------------------------------------------------------
 // User profile (community user)
 // -----------------------------------------------------------------------------
 // Surfaces everything you'd want to know about another shopper before
-// deciding to follow / message / blend them:
+// deciding to follow / message / influence-from them:
 //   - identity:     avatar, full name, @username, city, bio
 //   - taste:        style tags (derived from product tags they've liked)
 //   - social:       followers / following / followed-shops counts
-//   - actions:      follow / message / Style Blend toggle
+//   - actions:      follow / message
+//   - influence:    Style Influence selector (Off · Light · Medium · Strong · Heavy)
 //   - public picks: recently liked products grid
 //   - rec'd items:  things they've recommended to the community
 // -----------------------------------------------------------------------------
@@ -47,10 +50,8 @@ export default function UserProfileScreen() {
   const {
     isFollowingUser,
     toggleFollowUser,
-    isStyleInfluence,
-    toggleStyleInfluence,
-    getStyleInfluenceWeight,
-    myStyleWeight,
+    getStyleInfluenceLevel,
+    setStyleInfluenceLevel,
   } = useAppContext();
 
   const user = id ? getUserById(id) : undefined;
@@ -111,7 +112,9 @@ export default function UserProfileScreen() {
   }
 
   const following = isFollowingUser(user.id);
-  const blended = isStyleInfluence(user.id);
+  // Current level the viewer has assigned to this user, or "off" when
+  // they aren't in the blend. Drives the segmented selector below.
+  const influenceLevel: InfluenceSelection = getStyleInfluenceLevel(user.id);
 
   function handleFollowPress() {
     if (Platform.OS !== "web") {
@@ -142,21 +145,10 @@ export default function UserProfileScreen() {
     });
   }
 
-  function handleBlendToggle(value: boolean) {
-    if (Platform.OS !== "web") {
-      Haptics.selectionAsync();
-    }
-    // If the user is trying to ADD this person but the blend is already at
-    // 100% (no headroom), surface a friendly note instead of silently doing
-    // nothing — the underlying toggleStyleInfluence refuses the add.
-    if (value && !blended && myStyleWeight === 0) {
-      Alert.alert(
-        "Style Blend is full",
-        "Lower another influence's % first, then add this person.",
-      );
-      return;
-    }
-    toggleStyleInfluence(user!.id);
+  // Segmented selector → AppContext. No headroom logic, no alerts: levels
+  // are independent boosts, so picking any of the five stops always works.
+  function handleInfluenceChange(next: InfluenceSelection) {
+    setStyleInfluenceLevel(user!.id, next);
   }
 
   return (
@@ -258,51 +250,27 @@ export default function UserProfileScreen() {
         </View>
 
         {/*
-          STYLE BLEND TOGGLE
-          When ON, this user is added to the current account's style_influences
-          and the For You feed weights products they've liked by the assigned %.
-          See app/(tabs)/index.tsx → forYouFeed for the scoring formula.
+          STYLE INFLUENCE
+          5-stop selector controlling how strongly this user nudges the
+          viewer's For You feed. Off = not in the blend; Light/Medium/
+          Strong/Heavy map to numeric boosts (1/2/3/4) used by the feed
+          scorer in app/(tabs)/index.tsx. The user's own taste always
+          remains the base of the feed — these levels only add to it.
         */}
-        <View style={styles.blendCard}>
-          <View style={styles.blendCopy}>
-            <Text style={styles.blendTitle}>Include in my feed</Text>
-            <Text style={styles.blendSub}>
-              Style Blend will surface pieces {user.fullName.split(" ")[0]} has
-              saved in your For You.
+        <View style={styles.influenceCard} testID="style-influence-card">
+          <View style={styles.influenceHeader}>
+            <Text style={styles.influenceTitle}>Style Influence</Text>
+            <Text style={styles.influenceSub}>
+              How much {user.fullName.split(" ")[0]}&apos;s taste nudges your
+              For You feed.
             </Text>
           </View>
-          <Switch
-            value={blended}
-            onValueChange={handleBlendToggle}
-            testID="style-blend-toggle"
-            trackColor={{ false: Colors.border, true: Colors.text }}
-            thumbColor={Colors.surface}
-            ios_backgroundColor={Colors.border}
+          <InfluenceSelector
+            value={influenceLevel}
+            onChange={handleInfluenceChange}
+            testIDPrefix="profile-influence"
           />
         </View>
-
-        {blended && (
-          <Pressable
-            style={styles.adjustRow}
-            onPress={() => router.push("/style-blend")}
-            testID="adjust-blend-link"
-          >
-            <View style={styles.adjustInfo}>
-              <Text style={styles.adjustLabel}>Their share of your feed</Text>
-              <Text style={styles.adjustPct} testID="profile-blend-pct">
-                {getStyleInfluenceWeight(user.id)}%
-              </Text>
-            </View>
-            <View style={styles.adjustCta}>
-              <Text style={styles.adjustCtaText}>Adjust</Text>
-              <Feather
-                name="chevron-right"
-                size={14}
-                color={Colors.textSecondary}
-              />
-            </View>
-          </Pressable>
-        )}
 
         {/* Recommended items — pieces they've publicly recommended */}
         {recommended.length > 0 && (
@@ -530,63 +498,29 @@ const styles = StyleSheet.create({
     color: Colors.text,
     letterSpacing: 0.4,
   },
-  blendCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    backgroundColor: Colors.card,
-    borderRadius: 14,
-    padding: 16,
+  // Style Influence card — header copy on top, segmented selector below.
+  // Vertical layout gives the 5-stop control room to breathe on a 375pt
+  // phone; the brand's surface colour keeps it visually quiet so the
+  // segmented control's active chip is what draws the eye.
+  influenceCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
     marginBottom: 16,
+    gap: 12,
   },
-  blendCopy: { flex: 1 },
-  blendTitle: {
+  influenceHeader: { gap: 4 },
+  influenceTitle: {
     fontSize: 15,
     fontFamily: "Inter_600SemiBold",
     color: Colors.text,
-    marginBottom: 4,
   },
-  blendSub: {
+  influenceSub: {
     fontSize: 12,
     fontFamily: "Inter_400Regular",
     color: Colors.textSecondary,
     lineHeight: 17,
-  },
-  adjustRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 12,
-    padding: 14,
-    marginTop: -8,
-    marginBottom: 16,
-  },
-  adjustInfo: { flex: 1 },
-  adjustLabel: {
-    fontSize: 11,
-    fontFamily: "Inter_500Medium",
-    color: Colors.textSecondary,
-    letterSpacing: 0.6,
-    textTransform: "uppercase",
-    marginBottom: 4,
-  },
-  adjustPct: {
-    fontSize: 22,
-    fontFamily: "PlayfairDisplay_700Bold",
-    color: Colors.text,
-  },
-  adjustCta: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  adjustCtaText: {
-    fontSize: 13,
-    fontFamily: "Inter_600SemiBold",
-    color: Colors.textSecondary,
   },
   section: {
     marginTop: 14,

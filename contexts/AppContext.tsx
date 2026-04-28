@@ -57,24 +57,47 @@ export interface Conversation {
 
 // StyleInfluence — one entry in the user's "Style Blend":
 // the current user (userId) is including products that influenceUserId has
-// liked/saved into their own For You feed.
+// liked/saved/recommended into their own For You feed.
 //
-// `weight` is a percentage (0-100) of the For You feed dedicated to that
-// influence. The remaining percentage (100 minus the sum of all influence
-// weights) implicitly belongs to "Me" — the user's own taste signal.
-// Constraint enforced in toggleStyleInfluence / setStyleInfluenceWeight:
-//   sum(weights) <= 100  →  myWeight = 100 - sum(weights) >= 0
+// `level` is a coarse, fashion-friendly setting (Light → Heavy) that the
+// For You scorer turns into a numeric BOOST. There is no fixed "share"
+// of the feed — the user's own taste is always the base of the feed and
+// influences only nudge specific pieces upward. See app/(tabs)/index.tsx
+// for the exact scoring formula and the rationale behind the constants.
+//
+// "Off" is represented by the absence of a row, NOT by a stored level.
+// This keeps the data model trivially correct: if it's in the array, it
+// influences the feed; if it isn't, it doesn't.
+export type InfluenceLevel = "light" | "medium" | "strong" | "heavy";
+
+export const INFLUENCE_LEVELS: InfluenceLevel[] = [
+  "light",
+  "medium",
+  "strong",
+  "heavy",
+];
+
+// Numeric boosts used by the For You feed scorer. Light = 1 means even
+// four Light influences (sum 4) cannot beat a single self-saved item
+// (which scores MY_TASTE_BOOST = 8). One Heavy = 4 still nudges items up
+// noticeably without overpowering the user's own taste.
+export const INFLUENCE_LEVEL_WEIGHTS: Record<InfluenceLevel, number> = {
+  light: 1,
+  medium: 2,
+  strong: 3,
+  heavy: 4,
+};
+
+// Default level applied when toggling a user INTO the blend (e.g. via the
+// generic toggleStyleInfluence helper). Medium = a sensible middle ground
+// for "I trust this person's taste, surface their picks sometimes".
+export const DEFAULT_INFLUENCE_LEVEL: InfluenceLevel = "medium";
+
 export interface StyleInfluence {
   userId: string;
   influenceUserId: string;
-  weight: number;
+  level: InfluenceLevel;
 }
-
-export const DEFAULT_INFLUENCE_WEIGHT = 20;
-export const STYLE_BLEND_TOTAL = 100;
-// Step granularity for the +/- controls — keeps the UI tidy while still
-// allowing fine-grained control (5% increments give 21 distinct levels).
-export const STYLE_BLEND_STEP = 5;
 
 export interface UserShop {
   id: string;
@@ -103,20 +126,22 @@ interface AppContextValue {
   toggleFollowUser: (userId: string) => void;
   isFollowingUser: (userId: string) => boolean;
   styleInfluences: StyleInfluence[];
+  // Adds the user at DEFAULT_INFLUENCE_LEVEL when off; removes when on.
+  // Kept as a convenience for older callers — new code should prefer
+  // setStyleInfluenceLevel which expresses the user's intent more clearly.
   toggleStyleInfluence: (userId: string) => void;
   isStyleInfluence: (userId: string) => boolean;
-  // Returns the current weight (0-100) the user has assigned to a given
-  // influence user. Returns 0 if the user is not currently in the blend.
-  getStyleInfluenceWeight: (userId: string) => number;
-  // Updates an influence's weight. Always clamped so that the total of all
-  // influences stays within [0, STYLE_BLEND_TOTAL]. Returns the value that
-  // was actually applied (which may be less than requested if it would
-  // overflow the available headroom).
-  setStyleInfluenceWeight: (userId: string, weight: number) => number;
-  // Derived: 100 minus the sum of every influence weight that belongs to
-  // the current user. Represents the share of the feed reserved for the
-  // user's own taste ("Me").
-  myStyleWeight: number;
+  // Returns "off" when the user is not in the current account's blend,
+  // otherwise the InfluenceLevel that has been assigned to them.
+  getStyleInfluenceLevel: (userId: string) => InfluenceLevel | "off";
+  // Sets a user's influence level. Passing "off" removes them from the
+  // blend; any InfluenceLevel either inserts a new row or updates the
+  // existing row in place. There is no clamping/headroom logic — levels
+  // are independent boosts, not a percentage allocation.
+  setStyleInfluenceLevel: (
+    userId: string,
+    level: InfluenceLevel | "off",
+  ) => void;
   cart: CartItem[];
   addToCart: (product: Product) => void;
   removeFromCart: (productId: string) => void;
@@ -218,27 +243,84 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setSavedProductIds(saved ? JSON.parse(saved) : []);
       setFollowedShopIds(shops ? JSON.parse(shops) : []);
       setFollowedUserIds(users ? JSON.parse(users) : []);
-      // Normalize on load — clamps any legacy/corrupted weights into the
-      // valid range so a bad persisted value can never break the invariant
-      // (sum(weights) <= 100, weight in [0, 100]).
-      setStyleInfluences(
-        influences
-          ? (JSON.parse(influences) as StyleInfluence[])
-              .filter(
-                (i) =>
-                  i &&
-                  typeof i.userId === "string" &&
-                  typeof i.influenceUserId === "string",
-              )
-              .map((i) => ({
-                ...i,
-                weight: Math.max(
-                  0,
-                  Math.min(STYLE_BLEND_TOTAL, Math.round(i.weight ?? 0)),
-                ),
-              }))
-          : [],
-      );
+      // Normalize on load. Two shapes can exist in storage:
+      //   - NEW: { userId, influenceUserId, level: InfluenceLevel }
+      //   - LEGACY: { userId, influenceUserId, weight: number (0-100) }
+      // Legacy rows are migrated to the closest matching level so users
+      // who tested an earlier build don't lose their blend. Anything that
+      // can't be made sense of is silently dropped.
+      const rawInfluences: unknown[] = influences
+        ? (JSON.parse(influences) as unknown[])
+        : [];
+      // Dedup map keyed by `${userId}__${influenceUserId}` so a single
+      // (owner, influencer) pair can never appear twice in the loaded
+      // state. If the persisted blob ever contains duplicates (legacy
+      // bug, hand-edited storage, etc.) the LAST entry wins — and we
+      // prefer the new-shape row over a legacy weight row when both
+      // exist for the same pair, since the new shape is more precise.
+      const byPair = new Map<
+        string,
+        { row: StyleInfluence; isNewShape: boolean }
+      >();
+      for (const entry of rawInfluences) {
+        if (
+          !entry ||
+          typeof (entry as { userId?: unknown }).userId !== "string" ||
+          typeof (entry as { influenceUserId?: unknown }).influenceUserId !==
+            "string"
+        ) {
+          continue;
+        }
+        const e = entry as {
+          userId: string;
+          influenceUserId: string;
+          level?: unknown;
+          weight?: unknown;
+        };
+        const key = `${e.userId}__${e.influenceUserId}`;
+        let parsed: { row: StyleInfluence; isNewShape: boolean } | null = null;
+        // Prefer the new shape if present and valid.
+        if (
+          typeof e.level === "string" &&
+          (INFLUENCE_LEVELS as string[]).includes(e.level)
+        ) {
+          parsed = {
+            row: {
+              userId: e.userId,
+              influenceUserId: e.influenceUserId,
+              level: e.level as InfluenceLevel,
+            },
+            isNewShape: true,
+          };
+        } else if (typeof e.weight === "number") {
+          // Fall back to the legacy weight → level bucket mapping.
+          if (e.weight <= 0) continue; // was effectively "off" — drop
+          const w = e.weight;
+          const level: InfluenceLevel =
+            w <= 20 ? "light" : w <= 40 ? "medium" : w <= 60 ? "strong" : "heavy";
+          parsed = {
+            row: {
+              userId: e.userId,
+              influenceUserId: e.influenceUserId,
+              level,
+            },
+            isNewShape: false,
+          };
+        }
+        if (!parsed) continue;
+        const existing = byPair.get(key);
+        // New-shape entries always beat legacy entries for the same pair;
+        // among same-shape entries the later occurrence wins. This means
+        // the scorer can never accidentally double-count a duplicate row.
+        if (
+          !existing ||
+          (parsed.isNewShape && !existing.isNewShape) ||
+          parsed.isNewShape === existing.isNewShape
+        ) {
+          byPair.set(key, parsed);
+        }
+      }
+      setStyleInfluences(Array.from(byPair.values()).map((v) => v.row));
       setCart(cartData ? JSON.parse(cartData) : []);
       setOrders(ordersData ? JSON.parse(ordersData) : []);
       setUserShop(shopData ? JSON.parse(shopData) : null);
@@ -297,59 +379,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }
 
   // ---------------------------------------------------------------------
-  // STYLE BLEND — weight management
+  // STYLE BLEND — level management
   // ---------------------------------------------------------------------
-  // Helper: returns only the influence rows that belong to the current user.
-  // All weight math lives on top of this to keep cross-account safety.
-  function ownInfluences(list: StyleInfluence[]): StyleInfluence[] {
-    if (!user) return [];
-    return list.filter((i) => i.userId === user.id);
-  }
-
-  // Sum of all influence weights for the current user. The "Me" share is
-  // simply STYLE_BLEND_TOTAL minus this number — never persisted, always
-  // derived, so the invariant (sum + me === 100) is impossible to break.
-  const influenceSum = ownInfluences(styleInfluences).reduce(
-    (s, i) => s + i.weight,
-    0,
-  );
-  const myStyleWeight = Math.max(0, STYLE_BLEND_TOTAL - influenceSum);
-
-  // Toggle a user in/out of the blend.
-  // - On ADD: assigns DEFAULT_INFLUENCE_WEIGHT, but clamps to remaining
-  //   headroom so the total cannot exceed 100. If there's no headroom the
-  //   add is refused (no-op) — caller should show a "blend full" message.
-  function toggleStyleInfluence(targetUserId: string) {
-    if (!user) return;
-    if (targetUserId === user.id) return; // can't add yourself
-    setStyleInfluences((prev) => {
-      const exists = prev.some(
-        (i) => i.userId === user.id && i.influenceUserId === targetUserId,
-      );
-      let next: StyleInfluence[];
-      if (exists) {
-        // Removing an influence frees up its weight back to "Me".
-        next = prev.filter(
-          (i) =>
-            !(i.userId === user.id && i.influenceUserId === targetUserId),
-        );
-      } else {
-        const currentSum = ownInfluences(prev).reduce(
-          (s, i) => s + i.weight,
-          0,
-        );
-        const headroom = STYLE_BLEND_TOTAL - currentSum;
-        if (headroom <= 0) return prev; // blend is full, refuse silently
-        const weight = Math.min(DEFAULT_INFLUENCE_WEIGHT, headroom);
-        next = [
-          ...prev,
-          { userId: user.id, influenceUserId: targetUserId, weight },
-        ];
-      }
-      persist("style_influences", next);
-      return next;
-    });
-  }
+  // The model is intentionally simple: each (userId, influenceUserId) row
+  // either exists (with one of four levels) or it doesn't (= "off"). There
+  // is no percentage allocation, no headroom, no totals — adding more
+  // influences cannot "use up" the user's feed, because levels are boosts
+  // applied per-product on top of the user's own taste signal.
 
   function isStyleInfluence(targetUserId: string) {
     if (!user) return false;
@@ -360,60 +396,58 @@ export function AppProvider({ children }: { children: ReactNode }) {
     );
   }
 
-  function getStyleInfluenceWeight(targetUserId: string): number {
-    if (!user) return 0;
+  function getStyleInfluenceLevel(
+    targetUserId: string,
+  ): InfluenceLevel | "off" {
+    if (!user) return "off";
     const found = styleInfluences.find(
       (i) => i.userId === user.id && i.influenceUserId === targetUserId,
     );
-    return found?.weight ?? 0;
+    return found?.level ?? "off";
   }
 
-  // setStyleInfluenceWeight — adjust a single influence's percentage.
-  // Clamps to [0, headroom] where headroom = 100 minus the sum of every
-  // OTHER influence's weight. Returns the actually-applied weight so the UI
-  // can reflect a capped value when the user tries to overshoot.
-  function setStyleInfluenceWeight(
+  // Upsert / remove an influence row. "off" is the only value that
+  // removes; any InfluenceLevel either inserts or replaces in place.
+  function setStyleInfluenceLevel(
     targetUserId: string,
-    weight: number,
-  ): number {
-    if (!user) return 0;
-    let appliedWeight = 0;
+    next: InfluenceLevel | "off",
+  ): void {
+    if (!user) return;
+    if (targetUserId === user.id) return; // can't influence yourself
     setStyleInfluences((prev) => {
-      const sumOfOthers = prev.reduce(
-        (s, i) =>
-          i.userId === user.id && i.influenceUserId !== targetUserId
-            ? s + i.weight
-            : s,
-        0,
-      );
-      const headroom = STYLE_BLEND_TOTAL - sumOfOthers;
-      const clamped = Math.max(0, Math.min(headroom, Math.round(weight)));
-      appliedWeight = clamped;
-
-      const exists = prev.some(
+      const idx = prev.findIndex(
         (i) => i.userId === user.id && i.influenceUserId === targetUserId,
       );
-      let next: StyleInfluence[];
-      if (exists) {
-        next = prev.map((i) =>
-          i.userId === user.id && i.influenceUserId === targetUserId
-            ? { ...i, weight: clamped }
-            : i,
-        );
-      } else if (clamped > 0) {
-        // Lazy-add: setting a weight on someone not yet in the blend
-        // creates the row (useful from the manage screen).
-        next = [
+      let result: StyleInfluence[];
+      if (next === "off") {
+        if (idx === -1) return prev; // already off — no-op, no re-render
+        result = prev.filter((_, i) => i !== idx);
+      } else if (idx === -1) {
+        // Insert.
+        result = [
           ...prev,
-          { userId: user.id, influenceUserId: targetUserId, weight: clamped },
+          { userId: user.id, influenceUserId: targetUserId, level: next },
         ];
+      } else if (prev[idx].level === next) {
+        return prev; // unchanged — no-op
       } else {
-        next = prev;
+        // Replace level in place, preserving order so the management
+        // screen doesn't jump rows around as the user adjusts levels.
+        result = prev.map((i, ix) => (ix === idx ? { ...i, level: next } : i));
       }
-      persist("style_influences", next);
-      return next;
+      persist("style_influences", result);
+      return result;
     });
-    return appliedWeight;
+  }
+
+  // Convenience: adds at DEFAULT_INFLUENCE_LEVEL when off, removes when on.
+  // Kept so existing call sites (e.g. legacy switches) keep working.
+  function toggleStyleInfluence(targetUserId: string) {
+    const current = getStyleInfluenceLevel(targetUserId);
+    setStyleInfluenceLevel(
+      targetUserId,
+      current === "off" ? DEFAULT_INFLUENCE_LEVEL : "off",
+    );
   }
 
   function addToCart(product: Product) {
@@ -662,9 +696,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         styleInfluences,
         toggleStyleInfluence,
         isStyleInfluence,
-        getStyleInfluenceWeight,
-        setStyleInfluenceWeight,
-        myStyleWeight,
+        getStyleInfluenceLevel,
+        setStyleInfluenceLevel,
         cart,
         addToCart,
         removeFromCart,

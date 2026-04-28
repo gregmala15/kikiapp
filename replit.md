@@ -56,12 +56,20 @@ app/
   orders.tsx             → Order history
   conversation/[id].tsx  → DM thread (product banner, message bubbles)
   recommend/[productId].tsx → Recommend a product to followed users
-  user/[id].tsx          → Community user profile (stats, style tags, recommended, saved picks, follow + message + Style Blend)
-  style-blend.tsx        → Style Blend management (per-influence % with -/+ controls)
+  user/[id].tsx          → Community user profile (stats, style tags, recommended, saved picks, follow + message + Style Influence selector)
+  style-blend.tsx        → Style Influence management (one row per influenced user, 5-stop selector: Off · Light · Medium · Strong · Heavy)
   shop-setup.tsx         → Create/edit shop profile
   add-product.tsx        → Add product to shop rack
   shop-dashboard.tsx     → Shop products + orders management
 ```
+
+## Style Influence (replaces percentage-based Style Blend)
+- 5 stops: Off · Light · Medium · Strong · Heavy. Off = absent from `styleInfluences` array.
+- Numeric boosts: `INFLUENCE_LEVEL_WEIGHTS = {light:1, medium:2, strong:3, heavy:4}` (in `contexts/AppContext.tsx`).
+- AppContext API: `getStyleInfluenceLevel(userId)` returns `InfluenceLevel|"off"`; `setStyleInfluenceLevel(userId, level|"off")` does upsert/remove. Legacy `weight`-based API is fully removed.
+- Migration on load: legacy `{weight}` rows bucketed into levels (≤20 light, ≤40 medium, ≤60 strong, >60 heavy; ≤0 dropped). Duplicates by `(userId, influenceUserId)` are deduplicated; new-shape rows beat legacy-shape rows.
+- Shared selector: `components/InfluenceSelector.tsx` — segmented pill with radiogroup accessibility. Used on profile (`testIDPrefix="profile-influence"`) and on the management screen (`testIDPrefix="blend-influence-{userId}"`).
+- For You feed scoring (`app/(tabs)/index.tsx`): `score = 1 + (savedByMe ? 8 : 0) + Σ levelWeight` over influences whose `likes ∪ recommendations` include the product. User's own taste (boost 8) anchors the feed; even 4 Light influences (sum 4) cannot outrank a single self-saved item.
 
 ## Key Decisions
 - No backend — AsyncStorage only (prototype)

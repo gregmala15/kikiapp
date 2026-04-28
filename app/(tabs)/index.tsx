@@ -16,12 +16,16 @@ import {
   Product,
   getProductById,
   getRecommendationsFromUsers,
+  getRecommendationsByUser,
   getUserById,
   getLikesForUser,
   SEED_USERS,
 } from "@/constants/seed-data";
 import { ProductCard } from "@/components/ProductCard";
-import { useAppContext } from "@/contexts/AppContext";
+import {
+  useAppContext,
+  INFLUENCE_LEVEL_WEIGHTS,
+} from "@/contexts/AppContext";
 import { useAuth } from "@/contexts/AuthContext";
 
 const CATEGORIES = [
@@ -46,7 +50,6 @@ export default function ForYouScreen() {
     toggleFollowUser,
     styleInfluences,
     savedProductIds,
-    myStyleWeight,
   } = useAppContext();
   const params = useLocalSearchParams<{
     category?: string;
@@ -127,43 +130,65 @@ export default function ForYouScreen() {
   }, [followedShopIds, followedUserIds]);
 
   // -------------------------------------------------------------------------
-  // STYLE BLEND — Weighted For You feed composition
+  // STYLE INFLUENCE — For You feed composition
   // -------------------------------------------------------------------------
-  // Each product gets a relevance score equal to the sum of every signal
-  // that vouches for it, where each signal is the percentage (%) the user
-  // has assigned to that source in their blend:
+  // Each product is scored as:
   //
   //   score(product) =
-  //       (savedByMe ? myStyleWeight : 0)                       // "Me" share
-  //     + sum( inf.weight  for each influence user that liked product )
-  //     + DISCOVERY_BASELINE                                    // tie-breaker
+  //       DISCOVERY_BASELINE                              // every product
+  //     + (savedByMe ? MY_TASTE_BOOST : 0)                // user's own taste
+  //     + Σ INFLUENCE_LEVEL_WEIGHTS[inf.level]            // each influence
+  //         for every influence whose interactions       //   that "vouches"
+  //         (likes ∪ recommendations) include this piece //   for this piece
   //
-  // Why this works (no ML required):
-  //   - If Luca = 40% and Sofia = 20%, a product Luca liked outranks one
-  //     Sofia liked because 40 > 20 — exactly what the % means.
-  //   - A product Luca AND Sofia both liked stacks (40 + 20 = 60), so
-  //     consensus among influences floats to the top organically.
-  //   - DISCOVERY_BASELINE keeps unrated items present (otherwise the feed
-  //     would collapse once the user has any influences). Setting it to 1
-  //     ensures any influenced product (which has weight ≥ STYLE_BLEND_STEP)
-  //     always outranks pure discovery items.
+  // Why these constants:
+  //   - MY_TASTE_BOOST = 8 anchors the user's own saved items at the top
+  //     of the feed. The maximum boost any single influence can add is
+  //     Heavy = 4, and Light = 1, so even four Light influences (sum 4)
+  //     cannot outrank a single self-saved item (1+8=9 vs 1+4=5). This is
+  //     exactly the spec's "user's own taste always remains the base."
+  //   - INFLUENCE_LEVEL_WEIGHTS (1/2/3/4) are the only place the four
+  //     fashion-friendly levels turn into numbers — keeping them small
+  //     means they act as boosts, not replacements.
+  //   - DISCOVERY_BASELINE = 1 prevents the feed from collapsing once
+  //     the user has any influences — every product still has a baseline
+  //     chance to appear, and influence/save-driven products simply float
+  //     to the top. Without this, an influences-only list would dominate.
   //   - Stable tie-break by SEED_PRODUCTS index so equal-score items keep
-  //     a deterministic order across renders.
+  //     a deterministic order across renders (no shuffling on each tap).
+  //
+  // Multiple influences naturally STACK without replacing the user's feed:
+  // a piece that one Light + one Medium influence both saved scores 1+1+2=4,
+  // still well below a self-saved item (9). A piece that two Heavy
+  // influences both saved scores 1+4+4=9 — i.e. consensus among trusted
+  // taste-makers is the only thing that can match the user's own pick,
+  // which is the desired behaviour.
   // -------------------------------------------------------------------------
   const forYouFeed = useMemo<Product[]>(() => {
     const DISCOVERY_BASELINE = 1;
+    const MY_TASTE_BOOST = 8;
 
     // Defensive: only consider influences that belong to the current user.
+    // Without this filter, switching accounts could briefly leak the
+    // previous user's blend into the new user's feed.
     const ownInfluences = styleInfluences.filter(
       (inf) => !user || inf.userId === user.id,
     );
 
-    // Pre-compute likes per influence user → kept as a list so we can score
-    // per product in O(influences) rather than building a global set.
-    const influenceLikes = ownInfluences.map((inf) => ({
-      weight: inf.weight,
-      likedSet: new Set(getLikesForUser(inf.influenceUserId)),
-    }));
+    // For each influence, build the union of every product they've
+    // "interacted with" — the spec calls out saved + recommended +
+    // interacted as the signals that should make their picks appear more
+    // often. Likes are our proxy for saves/interactions in seed data.
+    const influenceSignals = ownInfluences.map((inf) => {
+      const liked = getLikesForUser(inf.influenceUserId);
+      const recommended = getRecommendationsByUser(inf.influenceUserId).map(
+        (r) => r.productId,
+      );
+      return {
+        boost: INFLUENCE_LEVEL_WEIGHTS[inf.level],
+        signalSet: new Set<string>([...liked, ...recommended]),
+      };
+    });
 
     const savedSet = new Set(savedProductIds);
 
@@ -171,14 +196,17 @@ export default function ForYouScreen() {
     const scored: Scored[] = SEED_PRODUCTS.map((product, index) => {
       let score = DISCOVERY_BASELINE;
 
-      // "Me" share — only counts when the user has actually saved this piece.
+      // The user's OWN taste — the base of the feed. Items they've saved
+      // get a strong boost so their picks always anchor the top.
       if (savedSet.has(product.id)) {
-        score += myStyleWeight;
+        score += MY_TASTE_BOOST;
       }
 
-      // Each matching influence adds its own % to the product's score.
-      for (const inf of influenceLikes) {
-        if (inf.likedSet.has(product.id)) score += inf.weight;
+      // Each matching influence adds its level-derived boost. Influences
+      // stack: a piece backed by multiple trusted taste-makers will float
+      // higher than a piece backed by only one of them.
+      for (const inf of influenceSignals) {
+        if (inf.signalSet.has(product.id)) score += inf.boost;
       }
 
       return { product, score, index };
@@ -189,7 +217,7 @@ export default function ForYouScreen() {
     );
 
     return scored.map((s) => s.product);
-  }, [styleInfluences, savedProductIds, user?.id, myStyleWeight]);
+  }, [styleInfluences, savedProductIds, user?.id]);
 
   const filtered = useMemo(() => {
     let list: Product[] =
