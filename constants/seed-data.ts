@@ -1344,6 +1344,125 @@ export const SEED_PRODUCTS: Product[] = [
   },
 ];
 
+export interface CommunityUser {
+  id: string;
+  username: string;
+  fullName: string;
+  avatarUrl: string;
+  bio: string;
+  city: City;
+}
+
+export const SEED_USERS: CommunityUser[] = [
+  {
+    id: "user-aria",
+    username: "aria.s",
+    fullName: "Aria Solano",
+    avatarUrl:
+      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&q=80",
+    bio: "Vintage hunter · Rome",
+    city: "Rome",
+  },
+  {
+    id: "user-luca",
+    username: "luca.m",
+    fullName: "Luca Marchetti",
+    avatarUrl:
+      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&q=80",
+    bio: "Archive collector",
+    city: "Rome",
+  },
+  {
+    id: "user-effie",
+    username: "effie.k",
+    fullName: "Effie Kerr",
+    avatarUrl:
+      "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&q=80",
+    bio: "London stylist",
+    city: "London",
+  },
+  {
+    id: "user-noah",
+    username: "noah.w",
+    fullName: "Noah Wells",
+    avatarUrl:
+      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80",
+    bio: "Editor · menswear",
+    city: "London",
+  },
+  {
+    id: "user-mira",
+    username: "mira.t",
+    fullName: "Mira Tanaka",
+    avatarUrl:
+      "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=200&q=80",
+    bio: "Y2K obsessive",
+    city: "London",
+  },
+];
+
+export interface ProductRecommendation {
+  id: string;
+  productId: string;
+  recommenderId: string;
+  recommendedAt: string;
+  note?: string;
+}
+
+export const SEED_RECOMMENDATIONS: ProductRecommendation[] = [
+  {
+    id: "rec-1",
+    productId: "prod-007",
+    recommenderId: "user-aria",
+    recommendedAt: "2026-04-27T10:14:00Z",
+    note: "Best leather I've seen in months",
+  },
+  {
+    id: "rec-2",
+    productId: "prod-014",
+    recommenderId: "user-luca",
+    recommendedAt: "2026-04-26T17:32:00Z",
+  },
+  {
+    id: "rec-3",
+    productId: "prod-022",
+    recommenderId: "user-effie",
+    recommendedAt: "2026-04-25T08:05:00Z",
+    note: "Obsessed with the cut",
+  },
+  {
+    id: "rec-4",
+    productId: "prod-033",
+    recommenderId: "user-noah",
+    recommendedAt: "2026-04-24T15:51:00Z",
+  },
+  {
+    id: "rec-5",
+    productId: "prod-041",
+    recommenderId: "user-mira",
+    recommendedAt: "2026-04-23T12:11:00Z",
+    note: "Y2K dream",
+  },
+  {
+    id: "rec-6",
+    productId: "prod-050",
+    recommenderId: "user-aria",
+    recommendedAt: "2026-04-22T09:00:00Z",
+  },
+  {
+    id: "rec-7",
+    productId: "prod-018",
+    recommenderId: "user-effie",
+    recommendedAt: "2026-04-20T19:24:00Z",
+  },
+  {
+    id: "rec-8",
+    productId: "prod-055",
+    recommenderId: "user-noah",
+    recommendedAt: "2026-04-18T11:42:00Z",
+  },
+];
+
 export function getProductsByShop(shopId: string): Product[] {
   return SEED_PRODUCTS.filter((p) => p.shopId === shopId);
 }
@@ -1354,6 +1473,19 @@ export function getShopById(shopId: string): Shop | undefined {
 
 export function getProductById(productId: string): Product | undefined {
   return SEED_PRODUCTS.find((p) => p.id === productId);
+}
+
+export function getUserById(userId: string): CommunityUser | undefined {
+  return SEED_USERS.find((u) => u.id === userId);
+}
+
+export function getRecommendationsFromUsers(
+  userIds: string[],
+): ProductRecommendation[] {
+  if (userIds.length === 0) return [];
+  return SEED_RECOMMENDATIONS.filter((r) =>
+    userIds.includes(r.recommenderId),
+  );
 }
 
 export function getHiddenGemShops(): Shop[] {

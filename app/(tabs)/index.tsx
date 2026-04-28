@@ -11,7 +11,14 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import Colors from "@/constants/colors";
-import { SEED_PRODUCTS } from "@/constants/seed-data";
+import {
+  SEED_PRODUCTS,
+  Product,
+  getProductById,
+  getRecommendationsFromUsers,
+  getUserById,
+  SEED_USERS,
+} from "@/constants/seed-data";
 import { ProductCard } from "@/components/ProductCard";
 import { useAppContext } from "@/contexts/AppContext";
 
@@ -29,7 +36,8 @@ type FeedMode = "foryou" | "following";
 
 export default function ForYouScreen() {
   const insets = useSafeAreaInsets();
-  const { cartCount, followedShopIds } = useAppContext();
+  const { cartCount, followedShopIds, followedUserIds, toggleFollowUser } =
+    useAppContext();
   const params = useLocalSearchParams<{
     category?: string;
     era?: string;
@@ -53,19 +61,88 @@ export default function ForYouScreen() {
     }
   }, [params.category, params.era, params.size]);
 
-  const filtered = useMemo(() => {
-    let list = SEED_PRODUCTS;
-    if (feedMode === "following") {
-      if (followedShopIds.length === 0) return [];
-      list = list.filter((p) => followedShopIds.includes(p.shopId));
+  const followingFeed = useMemo<
+    Array<{ product: Product; recommendedBy?: string; recommendedAt?: string }>
+  >(() => {
+    if (followedShopIds.length === 0 && followedUserIds.length === 0) {
+      return [];
     }
+
+    const seen = new Set<string>();
+    const items: Array<{
+      product: Product;
+      recommendedBy?: string;
+      recommendedAt?: string;
+      sortKey: number;
+    }> = [];
+
+    // 1) Newest products from followed shops first
+    const shopProducts = SEED_PRODUCTS.filter((p) =>
+      followedShopIds.includes(p.shopId),
+    );
+    // Use trailing numeric portion of id as a recency proxy (higher = newer)
+    shopProducts
+      .map((p) => ({
+        product: p,
+        sortKey: parseInt(p.id.replace(/\D/g, ""), 10) || 0,
+      }))
+      .sort((a, b) => b.sortKey - a.sortKey)
+      .forEach((entry) => {
+        if (seen.has(entry.product.id)) return;
+        seen.add(entry.product.id);
+        items.push({ product: entry.product, sortKey: entry.sortKey + 1e12 });
+      });
+
+    // 2) Recommendations from followed users (newest recommendation first)
+    const recs = getRecommendationsFromUsers(followedUserIds).sort(
+      (a, b) =>
+        new Date(b.recommendedAt).getTime() -
+        new Date(a.recommendedAt).getTime(),
+    );
+    recs.forEach((rec) => {
+      if (seen.has(rec.productId)) return;
+      const product = getProductById(rec.productId);
+      if (!product) return;
+      const recommender = getUserById(rec.recommenderId);
+      seen.add(product.id);
+      items.push({
+        product,
+        recommendedBy: recommender?.fullName,
+        recommendedAt: rec.recommendedAt,
+        sortKey: new Date(rec.recommendedAt).getTime(),
+      });
+    });
+
+    return items.sort((a, b) => b.sortKey - a.sortKey);
+  }, [followedShopIds, followedUserIds]);
+
+  const filtered = useMemo(() => {
+    let list: Product[] =
+      feedMode === "following"
+        ? followingFeed.map((f) => f.product)
+        : SEED_PRODUCTS;
+
     if (selectedCategory !== "All") {
       list = list.filter((p) => p.category === selectedCategory);
     }
     if (eraFilter) list = list.filter((p) => p.era === eraFilter);
     if (sizeFilter) list = list.filter((p) => p.size === sizeFilter);
     return list;
-  }, [feedMode, followedShopIds, selectedCategory, eraFilter, sizeFilter]);
+  }, [feedMode, followingFeed, selectedCategory, eraFilter, sizeFilter]);
+
+  const recommendationByProductId = useMemo(() => {
+    const map = new Map<string, string>();
+    followingFeed.forEach((f) => {
+      if (f.recommendedBy) map.set(f.product.id, f.recommendedBy);
+    });
+    return map;
+  }, [followingFeed]);
+
+  const suggestedPeople = useMemo(
+    () =>
+      SEED_USERS.filter((u) => !followedUserIds.includes(u.id)).slice(0, 5),
+    [followedUserIds],
+  );
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const activeFilters = [eraFilter, sizeFilter].filter(Boolean) as string[];
@@ -125,7 +202,22 @@ export default function ForYouScreen() {
       <FlatList
         data={filtered}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <ProductCard product={item} />}
+        renderItem={({ item }) => {
+          const recBy = recommendationByProductId.get(item.id);
+          return (
+            <View>
+              {feedMode === "following" && recBy && (
+                <View style={styles.recBanner}>
+                  <Feather name="star" size={11} color={Colors.accent} />
+                  <Text style={styles.recBannerText}>
+                    Recommended by {recBy}
+                  </Text>
+                </View>
+              )}
+              <ProductCard product={item} />
+            </View>
+          );
+        }}
         ListHeaderComponent={
           <View>
             <View style={styles.categoriesWrapper}>
@@ -176,13 +268,46 @@ export default function ForYouScreen() {
           </View>
         }
         ListEmptyComponent={
-          feedMode === "following" && followedShopIds.length === 0 ? (
+          feedMode === "following" &&
+          followedShopIds.length === 0 &&
+          followedUserIds.length === 0 ? (
             <View style={styles.empty}>
-              <Feather name="users" size={40} color={Colors.textTertiary} />
-              <Text style={styles.emptyTitle}>No shops yet</Text>
+              <Feather name="users" size={36} color={Colors.textTertiary} />
+              <Text style={styles.emptyTitle}>Build your feed</Text>
               <Text style={styles.emptyText}>
-                Follow shops to see their pieces here
+                Follow shops and people to build your feed.
               </Text>
+
+              {suggestedPeople.length > 0 && (
+                <View style={styles.suggestWrap}>
+                  <Text style={styles.suggestLabel}>People to follow</Text>
+                  {suggestedPeople.map((p) => (
+                    <View key={p.id} style={styles.suggestRow}>
+                      <View style={styles.suggestInfo}>
+                        <View style={styles.suggestAvatar}>
+                          <Text style={styles.suggestAvatarText}>
+                            {p.fullName
+                              .split(" ")
+                              .map((n) => n[0])
+                              .join("")}
+                          </Text>
+                        </View>
+                        <View>
+                          <Text style={styles.suggestName}>{p.fullName}</Text>
+                          <Text style={styles.suggestBio}>{p.bio}</Text>
+                        </View>
+                      </View>
+                      <Pressable
+                        style={styles.followBtn}
+                        onPress={() => toggleFollowUser(p.id)}
+                      >
+                        <Text style={styles.followBtnText}>Follow</Text>
+                      </Pressable>
+                    </View>
+                  ))}
+                </View>
+              )}
+
               <Pressable
                 style={styles.emptyBtn}
                 onPress={() => setFeedMode("foryou")}
@@ -360,5 +485,83 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#fff",
     letterSpacing: 0.3,
+  },
+  recBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 8,
+  },
+  recBannerText: {
+    fontFamily: "Inter_500Medium",
+    fontSize: 11,
+    color: Colors.textSecondary,
+    letterSpacing: 0.3,
+  },
+  suggestWrap: {
+    width: "100%",
+    marginTop: 24,
+    gap: 12,
+  },
+  suggestLabel: {
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 11,
+    color: Colors.textTertiary,
+    letterSpacing: 1.5,
+    textTransform: "uppercase",
+    marginBottom: 4,
+  },
+  suggestRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 8,
+  },
+  suggestInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    flex: 1,
+  },
+  suggestAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  suggestAvatarText: {
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 12,
+    color: Colors.text,
+    letterSpacing: 0.5,
+  },
+  suggestName: {
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 14,
+    color: Colors.text,
+  },
+  suggestBio: {
+    fontFamily: "Inter_400Regular",
+    fontSize: 12,
+    color: Colors.textSecondary,
+    marginTop: 1,
+  },
+  followBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: Colors.text,
+  },
+  followBtnText: {
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 12,
+    color: Colors.text,
   },
 });
