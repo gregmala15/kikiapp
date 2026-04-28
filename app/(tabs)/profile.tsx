@@ -222,6 +222,16 @@ export default function ProfileScreen() {
           <Feather name="chevron-right" size={16} color={Colors.textTertiary} />
         </Pressable>
         <View style={styles.menuDivider} />
+        <Pressable
+          style={styles.menuRow}
+          onPress={() => router.push("/style-blend")}
+          testID="open-style-blend"
+        >
+          <Feather name="sliders" size={20} color={Colors.text} />
+          <Text style={styles.menuText}>Style Blend</Text>
+          <Feather name="chevron-right" size={16} color={Colors.textTertiary} />
+        </Pressable>
+        <View style={styles.menuDivider} />
         <Pressable style={styles.menuRow} onPress={handleLogout}>
           <Feather name="log-out" size={20} color={Colors.danger} />
           <Text style={[styles.menuText, { color: Colors.danger }]}>Sign Out</Text>

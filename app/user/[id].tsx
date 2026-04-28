@@ -21,6 +21,7 @@ import {
   Product,
 } from "@/constants/seed-data";
 import { useAppContext } from "@/contexts/AppContext";
+import { Alert } from "react-native";
 
 export default function UserProfileScreen() {
   const insets = useSafeAreaInsets();
@@ -30,6 +31,8 @@ export default function UserProfileScreen() {
     toggleFollowUser,
     isStyleInfluence,
     toggleStyleInfluence,
+    getStyleInfluenceWeight,
+    myStyleWeight,
   } = useAppContext();
 
   const user = id ? getUserById(id) : undefined;
@@ -70,9 +73,19 @@ export default function UserProfileScreen() {
     toggleFollowUser(user!.id);
   }
 
-  function handleBlendToggle(_value: boolean) {
+  function handleBlendToggle(value: boolean) {
     if (Platform.OS !== "web") {
       Haptics.selectionAsync();
+    }
+    // If the user is trying to ADD this person but the blend is already at
+    // 100% (no headroom), surface a friendly note instead of silently doing
+    // nothing — the underlying toggleStyleInfluence refuses the add.
+    if (value && !blended && myStyleWeight === 0) {
+      Alert.alert(
+        "Style Blend is full",
+        "Lower another influence's % first, then add this person.",
+      );
+      return;
     }
     toggleStyleInfluence(user!.id);
   }
@@ -148,6 +161,29 @@ export default function UserProfileScreen() {
             ios_backgroundColor={Colors.border}
           />
         </View>
+
+        {blended && (
+          <Pressable
+            style={styles.adjustRow}
+            onPress={() => router.push("/style-blend")}
+            testID="adjust-blend-link"
+          >
+            <View style={styles.adjustInfo}>
+              <Text style={styles.adjustLabel}>Their share of your feed</Text>
+              <Text style={styles.adjustPct} testID="profile-blend-pct">
+                {getStyleInfluenceWeight(user.id)}%
+              </Text>
+            </View>
+            <View style={styles.adjustCta}>
+              <Text style={styles.adjustCtaText}>Adjust</Text>
+              <Feather
+                name="chevron-right"
+                size={14}
+                color={Colors.textSecondary}
+              />
+            </View>
+          </Pressable>
+        )}
 
         <View style={styles.likesHeader}>
           <Text style={styles.likesTitle}>Recently liked</Text>
@@ -294,6 +330,42 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_400Regular",
     color: Colors.textSecondary,
     lineHeight: 17,
+  },
+  adjustRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 12,
+    padding: 14,
+    marginTop: -16,
+    marginBottom: 28,
+  },
+  adjustInfo: { flex: 1 },
+  adjustLabel: {
+    fontSize: 11,
+    fontFamily: "Inter_500Medium",
+    color: Colors.textSecondary,
+    letterSpacing: 0.6,
+    textTransform: "uppercase",
+    marginBottom: 4,
+  },
+  adjustPct: {
+    fontSize: 22,
+    fontFamily: "PlayfairDisplay_700Bold",
+    color: Colors.text,
+  },
+  adjustCta: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  adjustCtaText: {
+    fontSize: 13,
+    fontFamily: "Inter_600SemiBold",
+    color: Colors.textSecondary,
   },
   likesHeader: {
     flexDirection: "row",

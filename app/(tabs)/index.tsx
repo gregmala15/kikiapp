@@ -46,6 +46,7 @@ export default function ForYouScreen() {
     toggleFollowUser,
     styleInfluences,
     savedProductIds,
+    myStyleWeight,
   } = useAppContext();
   const params = useLocalSearchParams<{
     category?: string;
@@ -126,65 +127,69 @@ export default function ForYouScreen() {
   }, [followedShopIds, followedUserIds]);
 
   // -------------------------------------------------------------------------
-  // STYLE BLEND — For You feed composition
+  // STYLE BLEND — Weighted For You feed composition
   // -------------------------------------------------------------------------
-  // The For You feed is a blend of three signal sources:
-  //   (a) USER PREFERENCES  — products the current user has saved themselves.
-  //                            Strongest personal signal; surfaced first.
-  //   (b) STYLE INFLUENCES  — products liked/saved by users the current user
-  //                            has toggled "Include in my feed" on.
-  //                            (style_influences storage; default weight 20.)
-  //   (c) DISCOVERY         — the rest of the catalog, so the feed never
-  //                            collapses to only known taste.
-  // Sections are concatenated in priority order (a → b → c) and de-duplicated
-  // by product id so a piece never appears twice. Category / era / size
-  // filters are applied AFTER the blend so the ordering is preserved within
-  // any active filter.
+  // Each product gets a relevance score equal to the sum of every signal
+  // that vouches for it, where each signal is the percentage (%) the user
+  // has assigned to that source in their blend:
+  //
+  //   score(product) =
+  //       (savedByMe ? myStyleWeight : 0)                       // "Me" share
+  //     + sum( inf.weight  for each influence user that liked product )
+  //     + DISCOVERY_BASELINE                                    // tie-breaker
+  //
+  // Why this works (no ML required):
+  //   - If Luca = 40% and Sofia = 20%, a product Luca liked outranks one
+  //     Sofia liked because 40 > 20 — exactly what the % means.
+  //   - A product Luca AND Sofia both liked stacks (40 + 20 = 60), so
+  //     consensus among influences floats to the top organically.
+  //   - DISCOVERY_BASELINE keeps unrated items present (otherwise the feed
+  //     would collapse once the user has any influences). Setting it to 1
+  //     ensures any influenced product (which has weight ≥ STYLE_BLEND_STEP)
+  //     always outranks pure discovery items.
+  //   - Stable tie-break by SEED_PRODUCTS index so equal-score items keep
+  //     a deterministic order across renders.
   // -------------------------------------------------------------------------
   const forYouFeed = useMemo<Product[]>(() => {
-    // (b) collect product ids liked by every active influence user.
-    // Defensive: only consider influences that belong to the current user
-    // — guards against stale/corrupt entries from a previous session.
-    const influenceLikedIds = new Set<string>();
-    styleInfluences
-      .filter((inf) => !user || inf.userId === user.id)
-      .forEach((inf) => {
-        getLikesForUser(inf.influenceUserId).forEach((pid) =>
-          influenceLikedIds.add(pid),
-        );
-      });
+    const DISCOVERY_BASELINE = 1;
 
-    const seen = new Set<string>();
-    const blended: Product[] = [];
+    // Defensive: only consider influences that belong to the current user.
+    const ownInfluences = styleInfluences.filter(
+      (inf) => !user || inf.userId === user.id,
+    );
 
-    // (a) saved by the user — strongest personal signal
-    savedProductIds.forEach((pid) => {
-      const product = getProductById(pid);
-      if (product && !seen.has(pid)) {
-        seen.add(pid);
-        blended.push(product);
+    // Pre-compute likes per influence user → kept as a list so we can score
+    // per product in O(influences) rather than building a global set.
+    const influenceLikes = ownInfluences.map((inf) => ({
+      weight: inf.weight,
+      likedSet: new Set(getLikesForUser(inf.influenceUserId)),
+    }));
+
+    const savedSet = new Set(savedProductIds);
+
+    type Scored = { product: Product; score: number; index: number };
+    const scored: Scored[] = SEED_PRODUCTS.map((product, index) => {
+      let score = DISCOVERY_BASELINE;
+
+      // "Me" share — only counts when the user has actually saved this piece.
+      if (savedSet.has(product.id)) {
+        score += myStyleWeight;
       }
-    });
 
-    // (b) liked by influence users — the Style Blend boost
-    influenceLikedIds.forEach((pid) => {
-      if (seen.has(pid)) return;
-      const product = getProductById(pid);
-      if (product) {
-        seen.add(pid);
-        blended.push(product);
+      // Each matching influence adds its own % to the product's score.
+      for (const inf of influenceLikes) {
+        if (inf.likedSet.has(product.id)) score += inf.weight;
       }
+
+      return { product, score, index };
     });
 
-    // (c) the rest of the catalog — normal discovery
-    SEED_PRODUCTS.forEach((product) => {
-      if (seen.has(product.id)) return;
-      seen.add(product.id);
-      blended.push(product);
-    });
+    scored.sort((a, b) =>
+      b.score !== a.score ? b.score - a.score : a.index - b.index,
+    );
 
-    return blended;
-  }, [styleInfluences, savedProductIds, user?.id]);
+    return scored.map((s) => s.product);
+  }, [styleInfluences, savedProductIds, user?.id, myStyleWeight]);
 
   const filtered = useMemo(() => {
     let list: Product[] =

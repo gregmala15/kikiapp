@@ -55,10 +55,15 @@ export interface Conversation {
   productId?: string;
 }
 
-// StyleInfluence — represents one entry in the user's "Style Blend":
+// StyleInfluence — one entry in the user's "Style Blend":
 // the current user (userId) is including products that influenceUserId has
-// liked/saved into their own For You feed. weight (default 20) reserved for
-// future tuning sliders; not yet exposed in UI.
+// liked/saved into their own For You feed.
+//
+// `weight` is a percentage (0-100) of the For You feed dedicated to that
+// influence. The remaining percentage (100 minus the sum of all influence
+// weights) implicitly belongs to "Me" — the user's own taste signal.
+// Constraint enforced in toggleStyleInfluence / setStyleInfluenceWeight:
+//   sum(weights) <= 100  →  myWeight = 100 - sum(weights) >= 0
 export interface StyleInfluence {
   userId: string;
   influenceUserId: string;
@@ -66,6 +71,10 @@ export interface StyleInfluence {
 }
 
 export const DEFAULT_INFLUENCE_WEIGHT = 20;
+export const STYLE_BLEND_TOTAL = 100;
+// Step granularity for the +/- controls — keeps the UI tidy while still
+// allowing fine-grained control (5% increments give 21 distinct levels).
+export const STYLE_BLEND_STEP = 5;
 
 export interface UserShop {
   id: string;
@@ -96,6 +105,18 @@ interface AppContextValue {
   styleInfluences: StyleInfluence[];
   toggleStyleInfluence: (userId: string) => void;
   isStyleInfluence: (userId: string) => boolean;
+  // Returns the current weight (0-100) the user has assigned to a given
+  // influence user. Returns 0 if the user is not currently in the blend.
+  getStyleInfluenceWeight: (userId: string) => number;
+  // Updates an influence's weight. Always clamped so that the total of all
+  // influences stays within [0, STYLE_BLEND_TOTAL]. Returns the value that
+  // was actually applied (which may be less than requested if it would
+  // overflow the available headroom).
+  setStyleInfluenceWeight: (userId: string, weight: number) => number;
+  // Derived: 100 minus the sum of every influence weight that belongs to
+  // the current user. Represents the share of the feed reserved for the
+  // user's own taste ("Me").
+  myStyleWeight: number;
   cart: CartItem[];
   addToCart: (product: Product) => void;
   removeFromCart: (productId: string) => void;
@@ -197,7 +218,27 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setSavedProductIds(saved ? JSON.parse(saved) : []);
       setFollowedShopIds(shops ? JSON.parse(shops) : []);
       setFollowedUserIds(users ? JSON.parse(users) : []);
-      setStyleInfluences(influences ? JSON.parse(influences) : []);
+      // Normalize on load — clamps any legacy/corrupted weights into the
+      // valid range so a bad persisted value can never break the invariant
+      // (sum(weights) <= 100, weight in [0, 100]).
+      setStyleInfluences(
+        influences
+          ? (JSON.parse(influences) as StyleInfluence[])
+              .filter(
+                (i) =>
+                  i &&
+                  typeof i.userId === "string" &&
+                  typeof i.influenceUserId === "string",
+              )
+              .map((i) => ({
+                ...i,
+                weight: Math.max(
+                  0,
+                  Math.min(STYLE_BLEND_TOTAL, Math.round(i.weight ?? 0)),
+                ),
+              }))
+          : [],
+      );
       setCart(cartData ? JSON.parse(cartData) : []);
       setOrders(ordersData ? JSON.parse(ordersData) : []);
       setUserShop(shopData ? JSON.parse(shopData) : null);
@@ -255,26 +296,56 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return followedUserIds.includes(userId);
   }
 
-  // Style Blend — toggle a community user as a "style influence" for the
-  // current account. When enabled, the For You feed will boost products that
-  // the influence user has liked/saved (see SEED_USER_LIKES + buildForYouFeed).
-  // The influence is tied to the current logged-in user's id so each account
-  // maintains its own blend.
+  // ---------------------------------------------------------------------
+  // STYLE BLEND — weight management
+  // ---------------------------------------------------------------------
+  // Helper: returns only the influence rows that belong to the current user.
+  // All weight math lives on top of this to keep cross-account safety.
+  function ownInfluences(list: StyleInfluence[]): StyleInfluence[] {
+    if (!user) return [];
+    return list.filter((i) => i.userId === user.id);
+  }
+
+  // Sum of all influence weights for the current user. The "Me" share is
+  // simply STYLE_BLEND_TOTAL minus this number — never persisted, always
+  // derived, so the invariant (sum + me === 100) is impossible to break.
+  const influenceSum = ownInfluences(styleInfluences).reduce(
+    (s, i) => s + i.weight,
+    0,
+  );
+  const myStyleWeight = Math.max(0, STYLE_BLEND_TOTAL - influenceSum);
+
+  // Toggle a user in/out of the blend.
+  // - On ADD: assigns DEFAULT_INFLUENCE_WEIGHT, but clamps to remaining
+  //   headroom so the total cannot exceed 100. If there's no headroom the
+  //   add is refused (no-op) — caller should show a "blend full" message.
   function toggleStyleInfluence(targetUserId: string) {
     if (!user) return;
     if (targetUserId === user.id) return; // can't add yourself
     setStyleInfluences((prev) => {
-      const exists = prev.some((i) => i.influenceUserId === targetUserId);
-      const next = exists
-        ? prev.filter((i) => i.influenceUserId !== targetUserId)
-        : [
-            ...prev,
-            {
-              userId: user.id,
-              influenceUserId: targetUserId,
-              weight: DEFAULT_INFLUENCE_WEIGHT,
-            },
-          ];
+      const exists = prev.some(
+        (i) => i.userId === user.id && i.influenceUserId === targetUserId,
+      );
+      let next: StyleInfluence[];
+      if (exists) {
+        // Removing an influence frees up its weight back to "Me".
+        next = prev.filter(
+          (i) =>
+            !(i.userId === user.id && i.influenceUserId === targetUserId),
+        );
+      } else {
+        const currentSum = ownInfluences(prev).reduce(
+          (s, i) => s + i.weight,
+          0,
+        );
+        const headroom = STYLE_BLEND_TOTAL - currentSum;
+        if (headroom <= 0) return prev; // blend is full, refuse silently
+        const weight = Math.min(DEFAULT_INFLUENCE_WEIGHT, headroom);
+        next = [
+          ...prev,
+          { userId: user.id, influenceUserId: targetUserId, weight },
+        ];
+      }
       persist("style_influences", next);
       return next;
     });
@@ -287,6 +358,62 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return styleInfluences.some(
       (i) => i.userId === user.id && i.influenceUserId === targetUserId,
     );
+  }
+
+  function getStyleInfluenceWeight(targetUserId: string): number {
+    if (!user) return 0;
+    const found = styleInfluences.find(
+      (i) => i.userId === user.id && i.influenceUserId === targetUserId,
+    );
+    return found?.weight ?? 0;
+  }
+
+  // setStyleInfluenceWeight — adjust a single influence's percentage.
+  // Clamps to [0, headroom] where headroom = 100 minus the sum of every
+  // OTHER influence's weight. Returns the actually-applied weight so the UI
+  // can reflect a capped value when the user tries to overshoot.
+  function setStyleInfluenceWeight(
+    targetUserId: string,
+    weight: number,
+  ): number {
+    if (!user) return 0;
+    let appliedWeight = 0;
+    setStyleInfluences((prev) => {
+      const sumOfOthers = prev.reduce(
+        (s, i) =>
+          i.userId === user.id && i.influenceUserId !== targetUserId
+            ? s + i.weight
+            : s,
+        0,
+      );
+      const headroom = STYLE_BLEND_TOTAL - sumOfOthers;
+      const clamped = Math.max(0, Math.min(headroom, Math.round(weight)));
+      appliedWeight = clamped;
+
+      const exists = prev.some(
+        (i) => i.userId === user.id && i.influenceUserId === targetUserId,
+      );
+      let next: StyleInfluence[];
+      if (exists) {
+        next = prev.map((i) =>
+          i.userId === user.id && i.influenceUserId === targetUserId
+            ? { ...i, weight: clamped }
+            : i,
+        );
+      } else if (clamped > 0) {
+        // Lazy-add: setting a weight on someone not yet in the blend
+        // creates the row (useful from the manage screen).
+        next = [
+          ...prev,
+          { userId: user.id, influenceUserId: targetUserId, weight: clamped },
+        ];
+      } else {
+        next = prev;
+      }
+      persist("style_influences", next);
+      return next;
+    });
+    return appliedWeight;
   }
 
   function addToCart(product: Product) {
@@ -535,6 +662,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         styleInfluences,
         toggleStyleInfluence,
         isStyleInfluence,
+        getStyleInfluenceWeight,
+        setStyleInfluenceWeight,
+        myStyleWeight,
         cart,
         addToCart,
         removeFromCart,
