@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import { Image } from "expo-image";
 import { router } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import Colors from "@/constants/colors";
 import { Product, getShopById } from "@/constants/seed-data";
@@ -36,6 +36,15 @@ export function ProductCard({ product, shopName, style }: ProductCardProps) {
   function handleSave() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     toggleSaved(product.id);
+  }
+
+  function handleRecommend(e?: { stopPropagation?: () => void }) {
+    e?.stopPropagation?.();
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.push({
+      pathname: "/recommend/[productId]",
+      params: { productId: product.id },
+    });
   }
 
   return (
@@ -75,17 +84,28 @@ export function ProductCard({ product, shopName, style }: ProductCardProps) {
           </View>
         )}
 
-        <Pressable
-          style={[styles.saveButton, saved && styles.saveButtonActive]}
-          onPress={handleSave}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <Ionicons
-            name={saved ? "heart" : "heart-outline"}
-            size={22}
-            color={saved ? Colors.danger : "#fff"}
-          />
-        </Pressable>
+        <View style={styles.actionStack}>
+          <Pressable
+            style={[styles.saveButton, saved && styles.saveButtonActive]}
+            onPress={handleSave}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            testID={`save-${product.id}`}
+          >
+            <Ionicons
+              name={saved ? "heart" : "heart-outline"}
+              size={22}
+              color={saved ? Colors.danger : "#fff"}
+            />
+          </Pressable>
+          <Pressable
+            style={styles.recommendButton}
+            onPress={handleRecommend}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            testID={`recommend-card-${product.id}`}
+          >
+            <Feather name="send" size={18} color="#fff" />
+          </Pressable>
+        </View>
       </View>
 
       <View style={styles.info}>
@@ -187,10 +207,14 @@ const styles = StyleSheet.create({
     fontSize: 10,
     letterSpacing: 1.5,
   },
-  saveButton: {
+  actionStack: {
     position: "absolute",
     top: 14,
     right: 14,
+    gap: 8,
+    alignItems: "center",
+  },
+  saveButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
@@ -200,6 +224,14 @@ const styles = StyleSheet.create({
   },
   saveButtonActive: {
     backgroundColor: "rgba(255,255,255,0.92)",
+  },
+  recommendButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(0,0,0,0.25)",
+    alignItems: "center",
+    justifyContent: "center",
   },
   info: {
     paddingHorizontal: 16,

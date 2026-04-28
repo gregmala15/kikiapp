@@ -110,6 +110,19 @@ export default function ProductDetailScreen() {
               </Pressable>
               <Pressable
                 style={styles.topCircle}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  router.push({
+                    pathname: "/recommend/[productId]",
+                    params: { productId: product!.id },
+                  });
+                }}
+                testID="recommend-product"
+              >
+                <Feather name="send" size={18} color="#fff" />
+              </Pressable>
+              <Pressable
+                style={styles.topCircle}
                 onPress={() => router.push("/cart")}
               >
                 <Feather name="shopping-bag" size={20} color="#fff" />

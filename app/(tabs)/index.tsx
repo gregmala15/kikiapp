@@ -300,6 +300,7 @@ export default function ForYouScreen() {
                       <Pressable
                         style={styles.followBtn}
                         onPress={() => toggleFollowUser(p.id)}
+                        testID={`follow-user-${p.id}`}
                       >
                         <Text style={styles.followBtnText}>Follow</Text>
                       </Pressable>

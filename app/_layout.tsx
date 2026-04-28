@@ -63,6 +63,10 @@ function RootLayoutNav() {
         options={{ headerShown: false, presentation: "modal" }}
       />
       <Stack.Screen
+        name="recommend/[productId]"
+        options={{ headerShown: false, presentation: "modal" }}
+      />
+      <Stack.Screen
         name="shop-setup"
         options={{ headerShown: false, presentation: "modal" }}
       />

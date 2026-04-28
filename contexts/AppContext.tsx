@@ -4,6 +4,7 @@ import React, {
   useState,
   useEffect,
   useCallback,
+  useRef,
   ReactNode,
 } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -127,6 +128,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
 
+  // Refs are the source of truth for messages/conversations so that successive
+  // sendMessage calls in the same render (e.g. recommending to multiple
+  // friends) don't read stale closure values and overwrite each other.
+  const messagesRef = useRef<Message[]>([]);
+  const conversationsRef = useRef<Conversation[]>([]);
+
+  function commitMessages(next: Message[]) {
+    messagesRef.current = next;
+    setMessages(next);
+  }
+
+  function commitConversations(next: Conversation[]) {
+    conversationsRef.current = next;
+    setConversations(next);
+  }
+
   useEffect(() => {
     if (user) {
       loadAll(user.id);
@@ -137,8 +154,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setCart([]);
       setOrders([]);
       setUserShop(null);
-      setConversations([]);
-      setMessages([]);
+      commitConversations([]);
+      commitMessages([]);
     }
   }, [user?.id]);
 
@@ -161,8 +178,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (cartData) setCart(JSON.parse(cartData));
       if (ordersData) setOrders(JSON.parse(ordersData));
       if (shopData) setUserShop(JSON.parse(shopData));
-      if (convsData) setConversations(JSON.parse(convsData));
-      if (msgsData) setMessages(JSON.parse(msgsData));
+      if (convsData) commitConversations(JSON.parse(convsData));
+      if (msgsData) commitMessages(JSON.parse(msgsData));
     } catch (e) {
       console.error("Failed to load app data:", e);
     }
@@ -377,7 +394,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!user) return "";
     const senderType: ParticipantType = userShop ? "shop" : "user";
     const convId = [user.id, toId].sort().join("_");
-    const existingConv = conversations.find((c) => c.id === convId);
+    const existingConv = conversationsRef.current.find((c) => c.id === convId);
 
     // Rule: shops can only reply, not initiate.
     if (senderType === "shop" && !existingConv) {
@@ -401,10 +418,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
       receiverType,
       timestamp: new Date().toISOString(),
     };
-    const newMsgs = [...messages, msg];
-    setMessages(newMsgs);
-    await persist("messages", newMsgs);
+    // Source of truth is the ref — synchronous so concurrent sendMessage
+    // calls (e.g. recommending to multiple friends back-to-back) all observe
+    // the latest state instead of a stale closure copy.
+    const newMsgs = [...messagesRef.current, msg];
+    commitMessages(newMsgs);
 
+    let newConvs: Conversation[];
     if (!existingConv) {
       const otherType: ParticipantType = receiverType;
       const newConv: Conversation = {
@@ -417,18 +437,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
         lastTimestamp: msg.timestamp,
         productId,
       };
-      const newConvs = [...conversations, newConv];
-      setConversations(newConvs);
-      await persist("conversations", newConvs);
+      newConvs = [...conversationsRef.current, newConv];
     } else {
-      const newConvs = conversations.map((c) =>
+      newConvs = conversationsRef.current.map((c) =>
         c.id === convId
           ? { ...c, lastMessage: content, lastTimestamp: msg.timestamp }
-          : c
+          : c,
       );
-      setConversations(newConvs);
-      await persist("conversations", newConvs);
     }
+    commitConversations(newConvs);
+
+    await Promise.all([
+      persist("messages", newMsgs),
+      persist("conversations", newConvs),
+    ]);
     return convId;
   }
 

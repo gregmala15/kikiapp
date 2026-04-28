@@ -252,6 +252,15 @@ function MessageBubble({ message, ownId }: { message: Message; ownId: string }) 
   const product = message.productId
     ? getProductById(message.productId)
     : undefined;
+  // For product recommendations, content holds the explicit user-typed note.
+  // For non-recommendation product shares (legacy share-product flow that set
+  // content = product.title), suppress the note bubble.
+  const noteText =
+    product && message.isProductRecommendation
+      ? (message.content ?? "").trim()
+      : product
+        ? ""
+        : message.content;
 
   return (
     <View
@@ -261,32 +270,67 @@ function MessageBubble({ message, ownId }: { message: Message; ownId: string }) 
       ]}
     >
       {product ? (
-        <Pressable
-          onPress={() => router.push(`/product/${product.id}`)}
-          style={[
-            bubbleStyles.productCard,
-            isOwn ? bubbleStyles.productCardOwn : bubbleStyles.productCardOther,
-          ]}
-        >
-          <Image
-            source={{ uri: product.imageUrl }}
-            style={bubbleStyles.productImage}
-            contentFit="cover"
-          />
-          <View style={bubbleStyles.productInfo}>
-            <View style={bubbleStyles.recTag}>
-              <Feather name="gift" size={10} color={Colors.accent} />
-              <Text style={bubbleStyles.recTagText}>Recommendation</Text>
+        <>
+          <Pressable
+            onPress={() => router.push(`/product/${product.id}`)}
+            style={[
+              bubbleStyles.productCard,
+              isOwn ? bubbleStyles.productCardOwn : bubbleStyles.productCardOther,
+            ]}
+          >
+            <Image
+              source={{ uri: product.imageUrl }}
+              style={bubbleStyles.productImage}
+              contentFit="cover"
+            />
+            <View style={bubbleStyles.productInfo}>
+              <View style={bubbleStyles.recTag}>
+                <Feather name="gift" size={10} color={Colors.accent} />
+                <Text style={bubbleStyles.recTagText}>Recommendation</Text>
+              </View>
+              <Text style={bubbleStyles.productTitle} numberOfLines={2}>
+                {product.title}
+              </Text>
+              <Text style={bubbleStyles.productMeta} numberOfLines={1}>
+                {product.size} · {product.era}
+              </Text>
+              <Text style={bubbleStyles.productMeta} numberOfLines={1}>
+                {getShopById(product.shopId)?.name ?? "Shop"}
+              </Text>
+              <View style={bubbleStyles.productFooter}>
+                <Text style={bubbleStyles.productPrice}>£{product.price}</Text>
+                <View style={bubbleStyles.openLink}>
+                  <Text style={bubbleStyles.openLinkText}>Open</Text>
+                  <Feather
+                    name="arrow-right"
+                    size={11}
+                    color={Colors.text}
+                  />
+                </View>
+              </View>
             </View>
-            <Text style={bubbleStyles.productTitle} numberOfLines={2}>
-              {product.title}
-            </Text>
-            <Text style={bubbleStyles.productMeta} numberOfLines={1}>
-              {getShopById(product.shopId)?.name ?? "Shop"}
-            </Text>
-            <Text style={bubbleStyles.productPrice}>£{product.price}</Text>
-          </View>
-        </Pressable>
+          </Pressable>
+          {noteText.length > 0 && (
+            <View
+              style={[
+                bubbleStyles.bubble,
+                isOwn ? bubbleStyles.bubbleOwn : bubbleStyles.bubbleOther,
+                bubbleStyles.noteBubble,
+              ]}
+            >
+              <Text
+                style={[
+                  bubbleStyles.bubbleText,
+                  isOwn
+                    ? bubbleStyles.bubbleTextOwn
+                    : bubbleStyles.bubbleTextOther,
+                ]}
+              >
+                {noteText}
+              </Text>
+            </View>
+          )}
+        </>
       ) : (
         <View
           style={[
@@ -489,8 +533,29 @@ const bubbleStyles = StyleSheet.create({
     fontFamily: "Inter_600SemiBold",
     fontSize: 14,
     color: Colors.text,
-    marginTop: 2,
   },
+  productFooter: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 6,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+  },
+  openLink: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  openLinkText: {
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 11,
+    color: Colors.text,
+    letterSpacing: 0.5,
+    textTransform: "uppercase",
+  },
+  noteBubble: { marginTop: 4 },
   time: {
     fontFamily: "Inter_400Regular",
     fontSize: 10,
