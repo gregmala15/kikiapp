@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -13,6 +13,7 @@ import { router, Stack } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { Image } from "expo-image";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import Colors from "@/constants/colors";
 import {
   SEED_PRODUCTS,
@@ -20,6 +21,8 @@ import {
   Product,
   Shop,
   ProductCategory,
+  getProductsByShop,
+  getShopById,
 } from "@/constants/seed-data";
 
 const CATEGORIES: ProductCategory[] = [
@@ -32,9 +35,9 @@ const CATEGORIES: ProductCategory[] = [
 ];
 
 const ERAS = ["Y2K", "90s", "80s", "70s", "60s", "Contemporary"];
-const SIZES = ["XS", "S", "M", "L", "XL", "One Size"];
-
-type Tab = "all" | "products" | "shops";
+const TRENDING = ["Vintage Levis", "Archive", "Y2K", "Italian leather", "Rome"];
+const RECENT_KEY = "kiki:recent_searches";
+const VERIFIED_THRESHOLD = 2500;
 
 interface SearchResults {
   products: Product[];
@@ -44,37 +47,58 @@ interface SearchResults {
   sizes: string[];
 }
 
+function normalize(s: string): string {
+  return s.toLowerCase().trim();
+}
+
+function matchesEra(era: string, q: string): boolean {
+  const e = normalize(era);
+  if (e.includes(q)) return true;
+  // Strip "19" prefix: "1990s" → "90s"
+  const stripped = e.replace(/^19/, "");
+  if (stripped.includes(q)) return true;
+  // Allow "1990" or "90" to match "90s"
+  const digits = q.replace(/\D/g, "");
+  if (digits && (e.includes(digits) || e.includes(digits.slice(-2)))) return true;
+  return false;
+}
+
 function search(query: string): SearchResults {
-  const q = query.trim().toLowerCase();
+  const q = normalize(query);
   if (!q) {
     return { products: [], shops: [], categories: [], eras: [], sizes: [] };
   }
 
   const products = SEED_PRODUCTS.filter((p) => {
-    const haystack = [
+    const fields = [
       p.title,
       p.description,
       p.category,
-      p.era,
       p.size,
       p.condition,
       ...(p.tags ?? []),
     ]
       .join(" ")
       .toLowerCase();
-    return haystack.includes(q);
-  }).slice(0, 30);
+    if (fields.includes(q)) return true;
+    if (matchesEra(p.era, q)) return true;
+    const shop = getShopById(p.shopId);
+    if (shop && shop.name.toLowerCase().includes(q)) return true;
+    return false;
+  }).slice(0, 50);
 
   const shops = SEED_SHOPS.filter((s) => {
     const haystack = [s.name, s.description, s.city, s.type, ...s.tags]
       .join(" ")
       .toLowerCase();
     return haystack.includes(q);
-  }).slice(0, 15);
+  }).slice(0, 20);
 
   const categories = CATEGORIES.filter((c) => c.toLowerCase().includes(q));
-  const eras = ERAS.filter((e) => e.toLowerCase().includes(q));
-  const sizes = SIZES.filter((s) => s.toLowerCase() === q || s.toLowerCase().startsWith(q));
+  const eras = ERAS.filter((e) => matchesEra(e, q));
+  const sizes = ["XS", "S", "M", "L", "XL", "One Size"].filter(
+    (s) => s.toLowerCase() === q || s.toLowerCase().startsWith(q),
+  );
 
   return { products, shops, categories, eras, sizes };
 }
@@ -82,12 +106,47 @@ function search(query: string): SearchResults {
 export default function SearchScreen() {
   const insets = useSafeAreaInsets();
   const [query, setQuery] = useState("");
-  const [tab, setTab] = useState<Tab>("all");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [recent, setRecent] = useState<string[]>([]);
   const topPad = Platform.OS === "web" ? 67 : insets.top;
 
-  const results = useMemo(() => search(query), [query]);
+  // Debounce input by 300ms
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQuery(query), 300);
+    return () => clearTimeout(t);
+  }, [query]);
 
-  const hasQuery = query.trim().length > 0;
+  // Load recent searches
+  useEffect(() => {
+    AsyncStorage.getItem(RECENT_KEY).then((v) => {
+      if (v) {
+        try {
+          const arr = JSON.parse(v);
+          if (Array.isArray(arr)) setRecent(arr.slice(0, 6));
+        } catch {}
+      }
+    });
+  }, []);
+
+  const saveRecent = useCallback(
+    async (term: string) => {
+      const t = term.trim();
+      if (!t) return;
+      const next = [t, ...recent.filter((r) => r.toLowerCase() !== t.toLowerCase())].slice(0, 6);
+      setRecent(next);
+      await AsyncStorage.setItem(RECENT_KEY, JSON.stringify(next));
+    },
+    [recent],
+  );
+
+  const clearRecent = useCallback(async () => {
+    setRecent([]);
+    await AsyncStorage.removeItem(RECENT_KEY);
+  }, []);
+
+  const results = useMemo(() => search(debouncedQuery), [debouncedQuery]);
+
+  const hasQuery = debouncedQuery.trim().length > 0;
   const hasResults =
     results.products.length > 0 ||
     results.shops.length > 0 ||
@@ -95,14 +154,23 @@ export default function SearchScreen() {
     results.eras.length > 0 ||
     results.sizes.length > 0;
 
-  const trending = ["Vintage Levis", "Archive", "Y2K", "Italian leather", "Rome"];
-
   function applyFilter(kind: "category" | "era" | "size", value: string) {
     Keyboard.dismiss();
+    saveRecent(value);
     router.replace({
       pathname: "/(tabs)",
       params: { [kind]: value },
     });
+  }
+
+  function openProduct(p: Product) {
+    saveRecent(debouncedQuery || p.title);
+    router.push(`/product/${p.id}`);
+  }
+
+  function openShop(s: Shop) {
+    saveRecent(debouncedQuery || s.name);
+    router.push(`/shop/${s.id}`);
   }
 
   return (
@@ -134,6 +202,7 @@ export default function SearchScreen() {
             returnKeyType="search"
             autoCapitalize="none"
             autoCorrect={false}
+            onSubmitEditing={() => saveRecent(query)}
           />
           {query.length > 0 && (
             <Pressable onPress={() => setQuery("")} hitSlop={8}>
@@ -143,39 +212,47 @@ export default function SearchScreen() {
         </View>
       </View>
 
-      {hasQuery && (
-        <View style={styles.tabs}>
-          {(["all", "products", "shops"] as Tab[]).map((t) => (
-            <Pressable
-              key={t}
-              style={[styles.tab, tab === t && styles.tabActive]}
-              onPress={() => setTab(t)}
-            >
-              <Text
-                style={[styles.tabText, tab === t && styles.tabTextActive]}
-              >
-                {t === "all" ? "All" : t === "products" ? "Pieces" : "Shops"}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-      )}
-
       <FlatList
         data={[1]}
         keyExtractor={() => "content"}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
-        contentContainerStyle={{
-          paddingBottom: insets.bottom + 40,
-        }}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}
         renderItem={() => (
           <View>
+            {/* EMPTY STATE */}
             {!hasQuery && (
               <View style={styles.emptyState}>
+                {recent.length > 0 && (
+                  <View style={{ marginBottom: 28 }}>
+                    <View style={styles.recentHeader}>
+                      <Text style={styles.sectionLabel}>Recent</Text>
+                      <Pressable onPress={clearRecent} hitSlop={8}>
+                        <Text style={styles.clearText}>Clear</Text>
+                      </Pressable>
+                    </View>
+                    <View style={styles.trendingWrap}>
+                      {recent.map((r) => (
+                        <Pressable
+                          key={r}
+                          style={styles.trendChip}
+                          onPress={() => setQuery(r)}
+                        >
+                          <Feather
+                            name="clock"
+                            size={12}
+                            color={Colors.textSecondary}
+                          />
+                          <Text style={styles.trendChipText}>{r}</Text>
+                        </Pressable>
+                      ))}
+                    </View>
+                  </View>
+                )}
+
                 <Text style={styles.sectionLabel}>Trending</Text>
                 <View style={styles.trendingWrap}>
-                  {trending.map((t) => (
+                  {TRENDING.map((t) => (
                     <Pressable
                       key={t}
                       style={styles.trendChip}
@@ -211,9 +288,7 @@ export default function SearchScreen() {
                   ))}
                 </View>
 
-                <Text style={[styles.sectionLabel, { marginTop: 36 }]}>
-                  Era
-                </Text>
+                <Text style={[styles.sectionLabel, { marginTop: 36 }]}>Era</Text>
                 <View style={styles.eraRow}>
                   {ERAS.map((e) => (
                     <Pressable
@@ -228,13 +303,10 @@ export default function SearchScreen() {
               </View>
             )}
 
+            {/* NO RESULTS */}
             {hasQuery && !hasResults && (
               <View style={styles.noResults}>
-                <Feather
-                  name="search"
-                  size={32}
-                  color={Colors.textTertiary}
-                />
+                <Feather name="search" size={32} color={Colors.textTertiary} />
                 <Text style={styles.noResultsTitle}>No matches</Text>
                 <Text style={styles.noResultsSub}>
                   Try a different word, era, or size
@@ -242,8 +314,8 @@ export default function SearchScreen() {
               </View>
             )}
 
+            {/* FILTER QUICK CHIPS */}
             {hasQuery &&
-              (tab === "all" || tab === "products") &&
               (results.categories.length > 0 ||
                 results.eras.length > 0 ||
                 results.sizes.length > 0) && (
@@ -284,62 +356,105 @@ export default function SearchScreen() {
                 </View>
               )}
 
-            {hasQuery && (tab === "all" || tab === "shops") && results.shops.length > 0 && (
+            {/* PRODUCTS — compact rows */}
+            {hasQuery && results.products.length > 0 && (
               <View style={styles.section}>
-                <Text style={styles.sectionLabel}>
-                  Shops · {results.shops.length}
-                </Text>
-                {results.shops.map((s) => (
-                  <Pressable
-                    key={s.id}
-                    style={styles.shopRow}
-                    onPress={() => router.push(`/shop/${s.id}`)}
-                  >
-                    <Image
-                      source={{ uri: s.storefrontImage }}
-                      style={styles.shopAvatar}
-                      contentFit="cover"
-                    />
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.shopName}>{s.name}</Text>
-                      <Text style={styles.shopMeta}>
-                        {s.city} · {s.type === "vintage" ? "Vintage" : "Independent"}
-                      </Text>
-                    </View>
-                    <Feather
-                      name="chevron-right"
-                      size={18}
-                      color={Colors.textTertiary}
-                    />
-                  </Pressable>
-                ))}
-              </View>
-            )}
-
-            {hasQuery && (tab === "all" || tab === "products") && results.products.length > 0 && (
-              <View style={styles.section}>
-                <Text style={styles.sectionLabel}>
-                  Pieces · {results.products.length}
-                </Text>
-                <View style={styles.productGrid}>
-                  {results.products.map((p) => (
+                <View style={styles.sectionHeaderRow}>
+                  <Text style={styles.sectionLabel}>
+                    Products · {results.products.length}
+                  </Text>
+                </View>
+                <View style={styles.divider} />
+                {results.products.map((p, idx) => {
+                  const shop = getShopById(p.shopId);
+                  return (
                     <Pressable
                       key={p.id}
-                      style={styles.productItem}
-                      onPress={() => router.push(`/product/${p.id}`)}
+                      style={[
+                        styles.productRow,
+                        idx < results.products.length - 1 && styles.rowBorder,
+                      ]}
+                      onPress={() => openProduct(p)}
                     >
                       <Image
                         source={{ uri: p.imageUrl }}
-                        style={styles.productImg}
+                        style={styles.productThumb}
                         contentFit="cover"
                       />
-                      <Text style={styles.productPrice}>£{p.price}</Text>
-                      <Text style={styles.productTitle} numberOfLines={1}>
-                        {p.title}
-                      </Text>
+                      <View style={styles.productInfo}>
+                        <View style={styles.productTopRow}>
+                          <Text style={styles.productTitle} numberOfLines={1}>
+                            {p.title}
+                          </Text>
+                          <Text style={styles.productPrice}>£{p.price}</Text>
+                        </View>
+                        <Text style={styles.productMeta}>
+                          {p.size} · {p.era}
+                        </Text>
+                        {shop && (
+                          <Text style={styles.productShop} numberOfLines={1}>
+                            {shop.name}
+                          </Text>
+                        )}
+                      </View>
                     </Pressable>
-                  ))}
+                  );
+                })}
+              </View>
+            )}
+
+            {/* SHOPS */}
+            {hasQuery && results.shops.length > 0 && (
+              <View style={styles.section}>
+                <View style={styles.sectionHeaderRow}>
+                  <Text style={styles.sectionLabel}>
+                    Shops · {results.shops.length}
+                  </Text>
                 </View>
+                <View style={styles.divider} />
+                {results.shops.map((s, idx) => {
+                  const productCount = getProductsByShop(s.id).length;
+                  const isVerified = s.followerCount >= VERIFIED_THRESHOLD;
+                  return (
+                    <Pressable
+                      key={s.id}
+                      style={[
+                        styles.shopRow,
+                        idx < results.shops.length - 1 && styles.rowBorder,
+                      ]}
+                      onPress={() => openShop(s)}
+                    >
+                      <Image
+                        source={{ uri: s.storefrontImage }}
+                        style={styles.shopAvatar}
+                        contentFit="cover"
+                      />
+                      <View style={{ flex: 1 }}>
+                        <View style={styles.shopNameRow}>
+                          <Text style={styles.shopName} numberOfLines={1}>
+                            {s.name}
+                          </Text>
+                          {isVerified && (
+                            <Feather
+                              name="check-circle"
+                              size={13}
+                              color={Colors.accent}
+                            />
+                          )}
+                        </View>
+                        <Text style={styles.shopMeta}>
+                          {s.city} · {productCount}{" "}
+                          {productCount === 1 ? "piece" : "pieces"}
+                        </Text>
+                      </View>
+                      <Feather
+                        name="chevron-right"
+                        size={18}
+                        color={Colors.textTertiary}
+                      />
+                    </Pressable>
+                  );
+                })}
               </View>
             )}
           </View>
@@ -381,30 +496,20 @@ const styles = StyleSheet.create({
     color: Colors.text,
     padding: 0,
   },
-  tabs: {
-    flexDirection: "row",
-    paddingHorizontal: 16,
-    paddingTop: 14,
-    gap: 8,
-  },
-  tab: {
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  tabActive: {
-    backgroundColor: Colors.text,
-    borderColor: Colors.text,
-  },
-  tabText: {
-    fontFamily: "Inter_500Medium",
-    fontSize: 12,
-    color: Colors.textSecondary,
-  },
-  tabTextActive: { color: "#fff" },
   emptyState: { paddingHorizontal: 20, paddingTop: 28 },
+  recentHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 14,
+  },
+  clearText: {
+    fontFamily: "Inter_500Medium",
+    fontSize: 11,
+    color: Colors.textSecondary,
+    letterSpacing: 0.5,
+    textTransform: "uppercase",
+  },
   sectionLabel: {
     fontFamily: "Inter_600SemiBold",
     fontSize: 11,
@@ -428,7 +533,12 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: Colors.text,
   },
-  browseGrid: { gap: 1, backgroundColor: Colors.border, borderRadius: 8, overflow: "hidden" },
+  browseGrid: {
+    gap: 1,
+    backgroundColor: Colors.border,
+    borderRadius: 8,
+    overflow: "hidden",
+  },
   browseItem: {
     flexDirection: "row",
     alignItems: "center",
@@ -456,6 +566,16 @@ const styles = StyleSheet.create({
     color: Colors.text,
   },
   section: { paddingHorizontal: 20, paddingTop: 28 },
+  sectionHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  divider: {
+    height: 1,
+    backgroundColor: Colors.border,
+    marginBottom: 4,
+  },
   filterChips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   filterChip: {
     flexDirection: "row",
@@ -471,50 +591,82 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: Colors.text,
   },
-  shopRow: {
+  // Compact product row
+  productRow: {
     flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 12,
+    paddingVertical: 14,
     gap: 14,
   },
-  shopAvatar: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+  rowBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  productThumb: {
+    width: 64,
+    height: 80,
+    borderRadius: 4,
     backgroundColor: Colors.surface,
   },
-  shopName: {
-    fontFamily: "Inter_600SemiBold",
-    fontSize: 15,
-    color: Colors.text,
+  productInfo: {
+    flex: 1,
+    justifyContent: "center",
+    gap: 3,
   },
-  shopMeta: {
-    fontFamily: "Inter_400Regular",
-    fontSize: 12,
-    color: Colors.textSecondary,
-    marginTop: 2,
-  },
-  productGrid: {
+  productTopRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
+    alignItems: "center",
+    justifyContent: "space-between",
     gap: 10,
   },
-  productItem: {
-    width: "48%",
-  },
-  productImg: {
-    width: "100%",
-    aspectRatio: 0.85,
-    backgroundColor: Colors.surface,
-    borderRadius: 4,
-    marginBottom: 8,
+  productTitle: {
+    flex: 1,
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 14,
+    color: Colors.text,
+    letterSpacing: -0.2,
   },
   productPrice: {
     fontFamily: "Inter_700Bold",
     fontSize: 14,
     color: Colors.text,
   },
-  productTitle: {
+  productMeta: {
+    fontFamily: "Inter_400Regular",
+    fontSize: 12,
+    color: Colors.textSecondary,
+  },
+  productShop: {
+    fontFamily: "Inter_500Medium",
+    fontSize: 11,
+    color: Colors.textTertiary,
+    letterSpacing: 0.4,
+    textTransform: "uppercase",
+    marginTop: 1,
+  },
+  // Shop row
+  shopRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 14,
+    gap: 14,
+  },
+  shopAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: Colors.surface,
+  },
+  shopNameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  shopName: {
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 14,
+    color: Colors.text,
+  },
+  shopMeta: {
     fontFamily: "Inter_400Regular",
     fontSize: 12,
     color: Colors.textSecondary,
