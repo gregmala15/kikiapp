@@ -1552,6 +1552,73 @@ export function getRecommendationsFromUsers(
   );
 }
 
+// Recommendations sent BY a single user (for showing on their profile).
+export function getRecommendationsByUser(
+  userId: string,
+): ProductRecommendation[] {
+  return SEED_RECOMMENDATIONS.filter((r) => r.recommenderId === userId);
+}
+
+// -----------------------------------------------------------------------------
+// Tiny deterministic string hash — stable across renders and reloads.
+// Used wherever we need a reproducible "random" pick for a given user id
+// (e.g. the followers mock below). Not cryptographic — just a spread function.
+// -----------------------------------------------------------------------------
+function hashUserId(s: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+// -----------------------------------------------------------------------------
+// Followers mock — deterministic per-user list.
+// In a real backend this would be a relational query; for the report demo we
+// derive a stable subset of SEED_USERS keyed off the target user's id, so the
+// numbers/lists stay identical across renders, reloads, and account switches.
+// Excludes the user themselves. The size of the returned list is between
+// 2 and (pool.length) inclusive, deterministically picked from the user-id
+// hash so each profile gets a different but stable follower count.
+// -----------------------------------------------------------------------------
+export function getFollowersForUser(userId: string): CommunityUser[] {
+  const pool = SEED_USERS.filter((u) => u.id !== userId);
+  if (pool.length === 0) return [];
+  const h = hashUserId(userId);
+  // 2..pool.length followers, deterministic.
+  const count = Math.max(2, Math.min(pool.length, (h % pool.length) + 2));
+  const start = h % pool.length;
+  const rotated = [...pool.slice(start), ...pool.slice(0, start)];
+  return rotated.slice(0, count);
+}
+
+// Style tags for a user — derived from the tags of products they've liked.
+// Counts tag frequency and returns the top N most common, so a user's
+// "style tags" actually reflect their taste rather than being hard-coded.
+export function getStyleTagsForUser(
+  userId: string,
+  limit: number = 5,
+): string[] {
+  const likes = getLikesForUser(userId);
+  const counts = new Map<string, number>();
+  for (const pid of likes) {
+    const p = getProductById(pid);
+    if (!p) continue;
+    for (const t of p.tags ?? []) counts.set(t, (counts.get(t) ?? 0) + 1);
+  }
+  return Array.from(counts.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, limit)
+    .map(([tag]) => tag);
+}
+
+// Followed-shops count mock for non-current users — deterministic per user id.
+export function getFollowedShopsCountForUser(userId: string): number {
+  const h = hashUserId(userId);
+  return (h % 6) + 1; // 1..6 shops
+}
+
 export function getHiddenGemShops(): Shop[] {
   return SEED_SHOPS.filter((s) => s.followerCount < 3000);
 }

@@ -1,15 +1,23 @@
 import { isLiquidGlassAvailable } from "expo-glass-effect";
 import { Tabs } from "expo-router";
-import { NativeTabs, Icon, Label, Badge } from "expo-router/unstable-native-tabs";
+import { NativeTabs, Icon, Label } from "expo-router/unstable-native-tabs";
 import { BlurView } from "expo-blur";
 import { Platform, StyleSheet, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import Colors from "@/constants/colors";
-import { useAppContext } from "@/contexts/AppContext";
+
+// -----------------------------------------------------------------------------
+// Bottom tab bar
+// -----------------------------------------------------------------------------
+// Order: For You · Hidden Gems · Saved · Social · Profile
+// "Social" replaces the old "Messages" tab. Inbox lives inside Social now,
+// alongside Following / Followers, so messaging stops being the headline
+// feature and becomes one tool inside a taste-driven network. The route file
+// for Social is app/(tabs)/social.tsx.
+// -----------------------------------------------------------------------------
 
 function NativeTabLayout() {
-  const { cartCount } = useAppContext();
   return (
     <NativeTabs>
       <NativeTabs.Trigger name="index">
@@ -24,9 +32,9 @@ function NativeTabLayout() {
         <Icon sf={{ default: "heart", selected: "heart.fill" }} />
         <Label>Saved</Label>
       </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="messages">
-        <Icon sf={{ default: "message", selected: "message.fill" }} />
-        <Label>Messages</Label>
+      <NativeTabs.Trigger name="social">
+        <Icon sf={{ default: "person.2", selected: "person.2.fill" }} />
+        <Label>Social</Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="profile">
         <Icon sf={{ default: "person", selected: "person.fill" }} />
@@ -37,7 +45,6 @@ function NativeTabLayout() {
 }
 
 function ClassicTabLayout() {
-  const { cartCount } = useAppContext();
   const isIOS = Platform.OS === "ios";
   const isWeb = Platform.OS === "web";
 
@@ -96,15 +103,11 @@ function ClassicTabLayout() {
         }}
       />
       <Tabs.Screen
-        name="messages"
+        name="social"
         options={{
-          title: "Messages",
+          title: "Social",
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons
-              name={focused ? "chatbubble" : "chatbubble-outline"}
-              size={22}
-              color={color}
-            />
+            <Ionicons name={focused ? "people" : "people-outline"} size={22} color={color} />
           ),
         }}
       />

@@ -46,7 +46,7 @@ app/
     index.tsx            → For You feed (category filter + product cards)
     hidden-gems.tsx      → Hidden Gems (boosted small shops — products/shops toggle)
     saved.tsx            → Saved items
-    messages.tsx         → Conversations list
+    social.tsx           → Social hub: user search + Following / Followers / Inbox (People · Shops)
     profile.tsx          → User profile, stats, orders, following, shop info
   product/[id].tsx       → Product detail (image, meta, shop row, add to cart)
   shop/[id].tsx          → Shop profile (hero, follow, product grid)
@@ -56,7 +56,7 @@ app/
   orders.tsx             → Order history
   conversation/[id].tsx  → DM thread (product banner, message bubbles)
   recommend/[productId].tsx → Recommend a product to followed users
-  user/[id].tsx          → Community user profile (Style Blend toggle, recently liked)
+  user/[id].tsx          → Community user profile (stats, style tags, recommended, saved picks, follow + message + Style Blend)
   style-blend.tsx        → Style Blend management (per-influence % with -/+ controls)
   shop-setup.tsx         → Create/edit shop profile
   add-product.tsx        → Add product to shop rack
