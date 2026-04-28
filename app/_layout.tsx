@@ -34,6 +34,10 @@ function RootLayoutNav() {
         name="(auth)"
         options={{ presentation: "modal", headerShown: false }}
       />
+      <Stack.Screen
+        name="search"
+        options={{ headerShown: false, presentation: "modal" }}
+      />
       <Stack.Screen name="product/[id]" options={{ headerShown: false }} />
       <Stack.Screen name="shop/[id]" options={{ headerShown: false }} />
       <Stack.Screen
