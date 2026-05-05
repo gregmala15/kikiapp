@@ -47,7 +47,17 @@ export default function ProductDetailScreen() {
 
   function handleSave() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const wasSaved = saved;
     toggleSaved(product!.id);
+    // If we just saved (heart turned ON), open the collection picker so the
+    // user can immediately drop it into a named collection. Unsaving stays
+    // a single tap with no follow-up prompt.
+    if (!wasSaved) {
+      router.push({
+        pathname: "/save-to-collection",
+        params: { productId: product!.id },
+      });
+    }
   }
 
   function handleAddToCart() {

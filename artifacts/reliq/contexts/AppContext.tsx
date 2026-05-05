@@ -115,10 +115,24 @@ export interface UserShop {
   orders: Order[];
 }
 
+export interface Collection {
+  id: string;
+  name: string;
+  productIds: string[];
+  createdAt: string;
+}
+
 interface AppContextValue {
   savedProductIds: string[];
   toggleSaved: (productId: string) => void;
   isSaved: (productId: string) => boolean;
+  collections: Collection[];
+  createCollection: (name: string, initialProductId?: string) => Collection;
+  renameCollection: (collectionId: string, name: string) => void;
+  deleteCollection: (collectionId: string) => void;
+  addProductToCollection: (collectionId: string, productId: string) => void;
+  removeProductFromCollection: (collectionId: string, productId: string) => void;
+  getCollectionsForProduct: (productId: string) => Collection[];
   followedShopIds: string[];
   toggleFollowShop: (shopId: string) => void;
   isFollowingShop: (shopId: string) => boolean;
@@ -181,6 +195,7 @@ function getKey(base: string, userId: string) {
 export function AppProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [savedProductIds, setSavedProductIds] = useState<string[]>([]);
+  const [collections, setCollections] = useState<Collection[]>([]);
   const [followedShopIds, setFollowedShopIds] = useState<string[]>([]);
   const [followedUserIds, setFollowedUserIds] = useState<string[]>([]);
   const [styleInfluences, setStyleInfluences] = useState<StyleInfluence[]>([]);
@@ -211,6 +226,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       loadAll(user.id);
     } else {
       setSavedProductIds([]);
+      setCollections([]);
       setFollowedShopIds([]);
       setFollowedUserIds([]);
       setStyleInfluences([]);
@@ -224,9 +240,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   async function loadAll(userId: string) {
     try {
-      const [saved, shops, users, influences, cartData, ordersData, shopData, convsData, msgsData] =
+      const [saved, collectionsData, shops, users, influences, cartData, ordersData, shopData, convsData, msgsData] =
         await Promise.all([
           AsyncStorage.getItem(getKey("saved", userId)),
+          AsyncStorage.getItem(getKey("collections", userId)),
           AsyncStorage.getItem(getKey("follow_shops", userId)),
           AsyncStorage.getItem(getKey("follow_users", userId)),
           AsyncStorage.getItem(getKey("style_influences", userId)),
@@ -240,7 +257,59 @@ export function AppProvider({ children }: { children: ReactNode }) {
       // key is missing). This prevents cross-account contamination when
       // switching users — without this, a missing key would leave the
       // previous user's state in memory.
-      setSavedProductIds(saved ? JSON.parse(saved) : []);
+      const loadedSaved: string[] = saved ? JSON.parse(saved) : [];
+      setSavedProductIds(loadedSaved);
+      // Defensive parse of collections — silently drop entries that don't
+      // match the expected shape so a corrupt blob can't crash the app.
+      const rawCollections: unknown = collectionsData ? JSON.parse(collectionsData) : [];
+      const savedSet = new Set(loadedSaved);
+      const parsedCollections: Collection[] = Array.isArray(rawCollections)
+        ? rawCollections.flatMap((c) => {
+            if (
+              !c ||
+              typeof (c as Collection).id !== "string" ||
+              typeof (c as Collection).name !== "string" ||
+              !Array.isArray((c as Collection).productIds)
+            ) {
+              return [];
+            }
+            const col = c as Collection;
+            // Enforce the strict-subset invariant on load: a collection
+            // can never reference a product that's not in "Saved". Prune
+            // stale IDs (left over from older builds or corruption) and
+            // dedupe in one pass.
+            const seen = new Set<string>();
+            const cleaned: string[] = [];
+            for (const p of col.productIds) {
+              if (typeof p !== "string" || seen.has(p) || !savedSet.has(p)) continue;
+              seen.add(p);
+              cleaned.push(p);
+            }
+            return [{
+              id: col.id,
+              name: col.name,
+              productIds: cleaned,
+              createdAt: typeof col.createdAt === "string" ? col.createdAt : new Date().toISOString(),
+            }];
+          })
+        : [];
+      setCollections(parsedCollections);
+      // If we had to clean anything up, write the normalized blob back so
+      // the next load is fast and consistent. Cheap to compare lengths
+      // since most users will have a handful of collections at most.
+      const wasModified =
+        !Array.isArray(rawCollections) ||
+        rawCollections.length !== parsedCollections.length ||
+        parsedCollections.some((c, i) => {
+          const original = (rawCollections as Collection[])[i];
+          return !original || original.productIds?.length !== c.productIds.length;
+        });
+      if (wasModified) {
+        AsyncStorage.setItem(
+          getKey("collections", userId),
+          JSON.stringify(parsedCollections)
+        ).catch(() => {});
+      }
       setFollowedShopIds(shops ? JSON.parse(shops) : []);
       setFollowedUserIds(users ? JSON.parse(users) : []);
       // Normalize on load. Two shapes can exist in storage:
@@ -338,16 +407,115 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   function toggleSaved(productId: string) {
     setSavedProductIds((prev) => {
-      const next = prev.includes(productId)
+      const wasSaved = prev.includes(productId);
+      const next = wasSaved
         ? prev.filter((id) => id !== productId)
         : [...prev, productId];
       persist("saved", next);
+      // When unsaving, also strip the product from every collection so
+      // collections never reference an item that's no longer in "Saved".
+      if (wasSaved) {
+        setCollections((prevCols) => {
+          const nextCols = prevCols.map((c) =>
+            c.productIds.includes(productId)
+              ? { ...c, productIds: c.productIds.filter((id) => id !== productId) }
+              : c
+          );
+          persist("collections", nextCols);
+          return nextCols;
+        });
+      }
       return next;
     });
   }
 
   function isSaved(productId: string) {
     return savedProductIds.includes(productId);
+  }
+
+  function createCollection(name: string, initialProductId?: string): Collection {
+    const trimmed = name.trim();
+    const collection: Collection = {
+      id: `col-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      name: trimmed,
+      productIds: initialProductId ? [initialProductId] : [],
+      createdAt: new Date().toISOString(),
+    };
+    setCollections((prev) => {
+      const next = [...prev, collection];
+      persist("collections", next);
+      return next;
+    });
+    // If we're adding a product, make sure it's also in the master Saved
+    // list. Membership check goes inside the updater so rapid repeated
+    // calls (e.g. double-tap) can't enqueue duplicate appends from a
+    // stale closure of `savedProductIds`.
+    if (initialProductId) {
+      setSavedProductIds((prev) => {
+        if (prev.includes(initialProductId)) return prev;
+        const next = [...prev, initialProductId];
+        persist("saved", next);
+        return next;
+      });
+    }
+    return collection;
+  }
+
+  function renameCollection(collectionId: string, name: string) {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    setCollections((prev) => {
+      const next = prev.map((c) =>
+        c.id === collectionId ? { ...c, name: trimmed } : c
+      );
+      persist("collections", next);
+      return next;
+    });
+  }
+
+  function deleteCollection(collectionId: string) {
+    setCollections((prev) => {
+      const next = prev.filter((c) => c.id !== collectionId);
+      persist("collections", next);
+      return next;
+    });
+  }
+
+  function addProductToCollection(collectionId: string, productId: string) {
+    setCollections((prev) => {
+      const next = prev.map((c) =>
+        c.id === collectionId && !c.productIds.includes(productId)
+          ? { ...c, productIds: [...c.productIds, productId] }
+          : c
+      );
+      persist("collections", next);
+      return next;
+    });
+    // Adding to a collection implies "saved" — keep the master list in
+    // sync. Membership check is inside the updater to avoid stale-closure
+    // duplicates under rapid repeat taps.
+    setSavedProductIds((prev) => {
+      if (prev.includes(productId)) return prev;
+      const next = [...prev, productId];
+      persist("saved", next);
+      return next;
+    });
+  }
+
+  function removeProductFromCollection(collectionId: string, productId: string) {
+    setCollections((prev) => {
+      const next = prev.map((c) =>
+        c.id === collectionId
+          ? { ...c, productIds: c.productIds.filter((id) => id !== productId) }
+          : c
+      );
+      persist("collections", next);
+      return next;
+    });
+  }
+
+  function getCollectionsForProduct(productId: string): Collection[] {
+    return collections.filter((c) => c.productIds.includes(productId));
   }
 
   function toggleFollowShop(shopId: string) {
@@ -687,6 +855,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
         savedProductIds,
         toggleSaved,
         isSaved,
+        collections,
+        createCollection,
+        renameCollection,
+        deleteCollection,
+        addProductToCollection,
+        removeProductFromCollection,
+        getCollectionsForProduct,
         followedShopIds,
         toggleFollowShop,
         isFollowingShop,

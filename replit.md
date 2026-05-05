@@ -43,4 +43,10 @@ The Reliq app (`artifacts/reliq/`) uses expo-router with file-based routing. Key
 
 Fonts: Inter (400/500/600/700) + Playfair Display (400/700/400-Italic)
 
+### Save / Collections invariants
+- `savedProductIds` is the master list ("All Saved"). `collections` are named subsets — every `productId` inside a `Collection` MUST also be in `savedProductIds`.
+- `toggleSaved` (unsave path) strips the product from every collection. `addProductToCollection` / `createCollection(name, productId)` add to `savedProductIds` if missing. Membership checks live INSIDE the `setSavedProductIds` updater to avoid stale-closure dupes from rapid taps.
+- `loadAll` prunes collection IDs against the loaded saved set on hydrate (and re-persists if it cleaned anything), so any drift from older builds self-heals on next launch.
+- AsyncStorage key: `kiki_collections_<userId>` (kept the `kiki_` prefix from the pre-rename for back-compat).
+
 See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details.

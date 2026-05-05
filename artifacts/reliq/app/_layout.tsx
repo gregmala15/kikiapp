@@ -83,6 +83,10 @@ function RootLayoutNav() {
         options={{ headerShown: false, presentation: "modal" }}
       />
       <Stack.Screen name="shop-dashboard" options={{ headerShown: false }} />
+      <Stack.Screen
+        name="save-to-collection"
+        options={{ headerShown: false, presentation: "modal" }}
+      />
     </Stack>
   );
 }
