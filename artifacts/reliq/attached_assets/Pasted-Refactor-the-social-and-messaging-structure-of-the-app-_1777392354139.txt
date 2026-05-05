@@ -1,0 +1,117 @@
+Refactor the social and messaging structure of the app.
+
+Goal:
+Create a unified “Social” section that includes:
+- friends (users)
+- followers/following
+- product recommendations
+- messaging (both users and shops)
+
+---
+
+NAVIGATION
+
+Replace the bottom navigation item “Messages” with “Social”.
+
+New bottom nav:
+- For You
+- Hidden Gems
+- Saved
+- Social
+- Profile
+
+---
+
+SOCIAL SECTION STRUCTURE
+
+Build a Social screen with the following:
+
+Top:
+- Search users input
+
+Sections or tabs:
+- Following
+- Followers
+- Inbox
+
+---
+
+INBOX STRUCTURE
+
+Inside Inbox, create two tabs:
+
+1. People
+- conversations between users
+- used mainly for product recommendations and short messages
+
+2. Shops
+- conversations with shops
+- used for product questions and order-related communication
+
+---
+
+MESSAGING RULES
+
+- Users can message users
+- Users can message shops
+- Shops can reply but cannot initiate conversations
+- No group chats
+
+Message types:
+- text
+- product recommendation (with product card)
+
+---
+
+USER PROFILE
+
+User profiles should include:
+- avatar
+- username
+- city
+- bio
+- style tags (e.g. 90s, leather, archive)
+- followers count
+- following count
+- followed shops count
+- public saved picks preview
+- recommended items preview
+- follow/unfollow button
+- message button
+- “Include in my feed” toggle (Style Blend)
+
+---
+
+SEARCH BEHAVIOR
+
+- Global search (top bar) focuses on:
+  products, shops, categories, era, size, condition
+
+- Social search focuses on:
+  users only
+
+---
+
+STYLE BLEND
+
+- “Include in my feed” toggle should be on user profile
+- this controls whether that user influences the feed
+
+---
+
+IMPORTANT
+
+- Do not remove existing messaging logic
+- Move messaging into Social → Inbox instead
+- Keep UI clean, minimal, and mobile-first
+- Make Social feel like a taste-driven network, not a generic chat app
+- Ensure product recommendation flow still works
+
+---
+
+FINAL RESULT
+
+The app should feel like:
+- a vintage discovery platform
+- powered by people’s taste
+- with messaging integrated naturally, not as the main feature
