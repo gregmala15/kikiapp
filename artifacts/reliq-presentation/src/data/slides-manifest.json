@@ -1,0 +1,50 @@
+[
+  {
+    "id": "1f4a3a40-1111-4f10-9001-000000000001",
+    "position": 1,
+    "filepath": "src/pages/slides/Title.tsx",
+    "title": "Reliq",
+    "description": "Title slide — Reliq, a discovery-first vintage marketplace.",
+    "speakerNotes": ""
+  },
+  {
+    "id": "1f4a3a40-1111-4f10-9001-000000000002",
+    "position": 2,
+    "filepath": "src/pages/slides/Context.tsx",
+    "title": "Context",
+    "description": "Vintage shopping is about discovery, not search.",
+    "speakerNotes": ""
+  },
+  {
+    "id": "1f4a3a40-1111-4f10-9001-000000000003",
+    "position": 3,
+    "filepath": "src/pages/slides/Problem.tsx",
+    "title": "Problem",
+    "description": "Online vintage feels repetitive, narrow, and over-personalised.",
+    "speakerNotes": ""
+  },
+  {
+    "id": "1f4a3a40-1111-4f10-9001-000000000004",
+    "position": 4,
+    "filepath": "src/pages/slides/Existing.tsx",
+    "title": "Existing Platforms",
+    "description": "Vinted, Depop, and Etsy are built for search and resale, not browsing.",
+    "speakerNotes": ""
+  },
+  {
+    "id": "1f4a3a40-1111-4f10-9001-000000000005",
+    "position": 5,
+    "filepath": "src/pages/slides/Solution.tsx",
+    "title": "Solution",
+    "description": "Reliq's four core features: Shopping Persona, Style Influence, Hidden Gems, Shop Rack Browsing.",
+    "speakerNotes": ""
+  },
+  {
+    "id": "1f4a3a40-1111-4f10-9001-000000000006",
+    "position": 6,
+    "filepath": "src/pages/slides/Outcome.tsx",
+    "title": "Evaluation & Outcome",
+    "description": "Testing focus and the outcome: wider discovery, more visibility for independent shops.",
+    "speakerNotes": ""
+  }
+]

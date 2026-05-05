@@ -1,0 +1,53 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-primary: var(--slide-primary);
+  --color-accent: var(--slide-accent);
+  --color-bg: var(--slide-bg);
+  --color-card: var(--slide-card);
+  --color-text: var(--slide-text);
+  --color-muted: var(--slide-muted);
+  --color-border: var(--slide-border);
+  --font-display: var(--font-display-family);
+  --font-body: var(--font-body-family);
+}
+
+:root {
+  /* Reliq brand palette — sourced from artifacts/reliq/constants/colors.ts */
+  --slide-primary: #1a1a1a; /* charcoal */
+  --slide-accent: #c9956c; /* gold */
+  --slide-bg: #faf9f7; /* cream */
+  --slide-card: #f5f3ef; /* warm off-cream card */
+  --slide-text: #1a1a1a;
+  --slide-muted: #6b6b6b;
+  --slide-border: #e8e4df;
+  --font-display-family: "Playfair Display", "Times New Roman", serif;
+  --font-body-family: "Inter", system-ui, sans-serif;
+  color-scheme: light;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--slide-bg);
+  color: var(--slide-text);
+  font-family: var(--font-body-family);
+}
+
+.slide {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.slide-viewer {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}

@@ -1,0 +1,26 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "vmiObnJAsVO_4blsygNdP"
+uri = "file://artifacts/reliq-presentation/public/hero-vintage.png"
+type = "image"
+title = "hero vintage editorial"
+
+[[generated]]
+id = "DyCDWSLzkLp5VI4Uc7uoI"
+uri = "file://artifacts/reliq-presentation/public/context-stilllife.png"
+type = "image"
+title = "context still life"
+
+[[generated]]
+id = "xyAzdS2U34xG1kPQ9lrsX"
+uri = "file://artifacts/reliq-presentation/public/problem-grid.png"
+type = "image"
+title = "problem fast fashion grid"
+
+[[generated]]
+id = "zeY-LuCAGuLKYCzZzmo5h"
+uri = "file://artifacts/reliq-presentation/public/outcome-shop.png"
+type = "image"
+title = "outcome boutique"

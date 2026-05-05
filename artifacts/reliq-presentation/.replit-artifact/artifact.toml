@@ -1,0 +1,31 @@
+kind = "slides"
+previewPath = "/reliq-presentation/"
+title = "Reliq Presentation"
+version = "1.0.0"
+id = "artifacts/reliq-presentation"
+router = "path"
+
+[[integratedSkills]]
+name = "slides"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/reliq-presentation/" ]
+localPort = 19390
+
+[services.development]
+run = "pnpm --filter @workspace/reliq-presentation run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/reliq-presentation", "run", "build" ]
+publicDir = "artifacts/reliq-presentation/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "19390"
+BASE_PATH = "/reliq-presentation/"
