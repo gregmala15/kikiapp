@@ -1,5 +1,4 @@
 uploads = []
-outputs = []
 
 [[generated]]
 id = "vmiObnJAsVO_4blsygNdP"
@@ -24,3 +23,9 @@ id = "zeY-LuCAGuLKYCzZzmo5h"
 uri = "file://artifacts/reliq-presentation/public/outcome-shop.png"
 type = "image"
 title = "outcome boutique"
+
+[[outputs]]
+id = "bfk4AUrwzf6ytE33L4l0i"
+uri = "file://.local/outputs/Kiki-Assistant.pdf"
+type = "pdf"
+title = "Kiki Assistant.pdf"
