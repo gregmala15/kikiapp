@@ -221,7 +221,7 @@ export default function HiddenGemsScreen() {
           { paddingTop: topPad + 8, borderBottomColor: GEM_BORDER },
         ]}
       >
-        <Text style={styles.wordmark}>KIKI</Text>
+        <Text style={styles.wordmark}>Reliq</Text>
         <Ionicons name="diamond-outline" size={20} color={GEM_ACCENT} />
       </View>
 

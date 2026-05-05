@@ -1,0 +1,74 @@
+Paste this into Replit:
+
+Create a 5-minute presentation for my final year project app called RELIQ.
+
+RELIQ is a discovery-first mobile marketplace for vintage fashion. It helps users discover one-of-one vintage pieces through a scrolling feed, while supporting independent vintage shops by giving them a digital sales channel.
+
+The presentation should follow these 5 abstract points:
+
+1. Broad research area
+   Digital marketplaces and recommendation systems in vintage fashion.
+
+2. Specific problem
+   Vintage discovery online is inefficient. Existing platforms can become too specific after one search, creating repetitive feeds and limiting exploration.
+
+3. Existing solutions and limitations
+   Platforms like Vinted, Depop, and Etsy rely heavily on search or engagement-driven recommendations. These systems are often opaque, repetitive, and not designed to replicate the experience of browsing physical vintage racks.
+
+4. Proposed solution
+   RELIQ introduces a discovery-first mobile interface with:
+
+* full-width product feed
+* shop profiles that feel like browsing a rack
+* Hidden Gems feed
+* dynamic shopping persona system
+* Style Influence, where users can let friends’ taste influence their feed
+* product recommendations between users
+
+5. Evaluation and outcomes
+   The prototype is evaluated through functional testing and user interaction scenarios, focusing on discovery efficiency, usability, and perceived relevance. The expected outcome is that persona-driven and socially-influenced feeds improve exploration and support visibility for independent vintage shops.
+
+Create 6 slides:
+
+Slide 1: Title
+RELIQ
+A discovery-first vintage marketplace
+
+Slide 2: Context
+Vintage shopping is about discovery, not just search.
+
+Slide 3: Problem
+Online vintage discovery is repetitive, narrow, and often over-personalised.
+
+Slide 4: Existing Platforms
+Vinted / Depop / Etsy
+Search-based, engagement-driven, not designed for exploratory browsing.
+
+Slide 5: Solution
+Show RELIQ’s core features:
+
+* Shopping Persona
+* Style Influence
+* Hidden Gems
+* Shop Rack Browsing
+
+Slide 6: Evaluation / Outcome
+Testing focuses on:
+
+* discovery
+* usability
+* recommendation relevance
+  Outcome: more diverse discovery and better shop visibility.
+
+Design style:
+
+* minimal
+* premium
+* vintage fashion aesthetic
+* large screenshots/mockups
+* very little text
+* clean typography
+* neutral background
+* editorial feel
+
+Keep it suitable for a 5-minute university presentation.

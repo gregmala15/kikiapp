@@ -1,4 +1,4 @@
-const KIKI = {
+const RELIQ = {
   background: "#FAF9F7",
   surface: "#FFFFFF",
   card: "#F5F3EF",
@@ -20,7 +20,7 @@ const KIKI = {
 };
 
 export default {
-  light: KIKI,
-  dark: KIKI,
-  ...KIKI,
+  light: RELIQ,
+  dark: RELIQ,
+  ...RELIQ,
 };

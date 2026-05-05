@@ -70,7 +70,7 @@ export default function ShopDashboardScreen() {
           <Ionicons name="storefront-outline" size={52} color={Colors.textTertiary} />
           <Text style={styles.noShopTitle}>No shop yet</Text>
           <Text style={styles.noShopDesc}>
-            Create your shop profile to start selling on KIKI
+            Create your shop profile to start selling on Reliq
           </Text>
           <Pressable
             style={styles.createBtn}

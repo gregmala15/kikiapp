@@ -258,7 +258,7 @@ export default function ForYouScreen() {
           { paddingTop: topPad + 12, borderBottomColor: Colors.border },
         ]}
       >
-        <Text style={styles.logo}>KIKI</Text>
+        <Text style={styles.logo}>Reliq</Text>
         <View style={styles.headerActions}>
           <Pressable
             style={styles.iconBtn}

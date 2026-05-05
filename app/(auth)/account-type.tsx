@@ -57,7 +57,7 @@ export default function AccountTypeScreen() {
 
       <Text style={styles.title}>I am a...</Text>
       <Text style={styles.subtitle}>
-        Choose how you want to use KIKI. You can always change this later.
+        Choose how you want to use Reliq. You can always change this later.
       </Text>
 
       <View style={styles.options}>

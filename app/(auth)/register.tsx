@@ -54,7 +54,7 @@ export default function RegisterScreen() {
         </Pressable>
 
         <Text style={styles.title}>Create{"\n"}account</Text>
-        <Text style={styles.subtitle}>Join the KIKI community</Text>
+        <Text style={styles.subtitle}>Join the Reliq community</Text>
 
         <View style={styles.form}>
           <View style={styles.field}>

@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "KIKI",
-    "slug": "kiki-fashion",
+    "name": "Reliq",
+    "slug": "reliq-fashion",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "kiki",
+    "scheme": "reliq",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {

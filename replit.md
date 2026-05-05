@@ -1,6 +1,8 @@
-# KIKI — Kreating Infrastructure for Kreative Independence
+# Reliq
 
 A mobile marketplace app for discovering and buying from independent fashion brands and vintage shops. Built with Expo + React Native (no backend — all persistence via AsyncStorage).
+
+> Previously named **KIKI** ("Kreating Infrastructure for Kreative Independence"). Renamed to Reliq. Internal AsyncStorage keys still use the legacy `kiki_*` namespace to preserve existing test data — see "Storage keys" below. iOS bundle identifier `com.kiki.fashion` and Android package `com.kiki.fashion` are intentionally unchanged so Expo Launch / App Store builds continue to work.
 
 ## Tech Stack
 
@@ -38,7 +40,7 @@ app/
   index.tsx              → redirects to welcome or tabs
   _layout.tsx            → root layout, fonts, providers
   (auth)/
-    welcome.tsx          → KIKI welcome / sign-in entry
+    welcome.tsx          → Reliq welcome / sign-in entry
     login.tsx            → login form
     register.tsx         → register form
     account-type.tsx     → shopper vs shop selection

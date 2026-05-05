@@ -99,7 +99,7 @@ export default function CartScreen() {
               style={styles.browseBtn}
               onPress={() => router.back()}
             >
-              <Text style={styles.browseBtnText}>Browse KIKI</Text>
+              <Text style={styles.browseBtnText}>Browse Reliq</Text>
             </Pressable>
           </View>
         }

@@ -54,7 +54,7 @@ export default function LoginScreen() {
         </Pressable>
 
         <Text style={styles.title}>Welcome{"\n"}back</Text>
-        <Text style={styles.subtitle}>Sign in to your KIKI account</Text>
+        <Text style={styles.subtitle}>Sign in to your Reliq account</Text>
 
         <View style={styles.form}>
           <View style={styles.field}>

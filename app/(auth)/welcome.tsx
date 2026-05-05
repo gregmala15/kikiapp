@@ -27,9 +27,9 @@ export default function WelcomeScreen() {
 
       <View style={[styles.content, { paddingTop: insets.top + 60, paddingBottom: insets.bottom + 40 }]}>
         <View style={styles.top}>
-          <Text style={styles.logo}>KIKI</Text>
+          <Text style={styles.logo}>Reliq</Text>
           <Text style={styles.tagline}>
-            Kreating Infrastructure{"\n"}for Kreative Independence
+            Independent fashion{"\n"}vintage finds, hidden gems
           </Text>
         </View>
 
