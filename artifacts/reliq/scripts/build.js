@@ -6,6 +6,22 @@ const { pipeline } = require("stream/promises");
 
 let metroProcess = null;
 
+const projectRoot = path.resolve(__dirname, "..");
+
+function findWorkspaceRoot(startDir) {
+  let dir = startDir;
+  while (dir !== path.dirname(dir)) {
+    if (fs.existsSync(path.join(dir, "pnpm-workspace.yaml"))) {
+      return dir;
+    }
+    dir = path.dirname(dir);
+  }
+  throw new Error("Could not find workspace root (no pnpm-workspace.yaml found)");
+}
+
+const workspaceRoot = findWorkspaceRoot(projectRoot);
+const basePath = (process.env.BASE_PATH || "/").replace(/\/+$/, "");
+
 function exitWithError(message) {
   console.error(message);
   if (metroProcess) {
@@ -39,7 +55,6 @@ function stripProtocol(domain) {
 }
 
 function getDeploymentDomain() {
-  // Check Replit deployment environment variables first
   if (process.env.REPLIT_INTERNAL_APP_DOMAIN) {
     return stripProtocol(process.env.REPLIT_INTERNAL_APP_DOMAIN);
   }
@@ -61,15 +76,16 @@ function getDeploymentDomain() {
 function prepareDirectories(timestamp) {
   console.log("Preparing build directories...");
 
-  if (fs.existsSync("static-build")) {
-    fs.rmSync("static-build", { recursive: true });
+  const staticBuild = path.join(projectRoot, "static-build");
+  if (fs.existsSync(staticBuild)) {
+    fs.rmSync(staticBuild, { recursive: true });
   }
 
   const dirs = [
-    path.join("static-build", timestamp, "_expo", "static", "js", "ios"),
-    path.join("static-build", timestamp, "_expo", "static", "js", "android"),
-    path.join("static-build", "ios"),
-    path.join("static-build", "android"),
+    path.join(staticBuild, timestamp, "_expo", "static", "js", "ios"),
+    path.join(staticBuild, timestamp, "_expo", "static", "js", "android"),
+    path.join(staticBuild, "ios"),
+    path.join(staticBuild, "android"),
   ];
 
   for (const dir of dirs) {
@@ -83,12 +99,14 @@ function clearMetroCache() {
   console.log("Clearing Metro cache...");
 
   const cacheDirs = [
-    ...fs.globSync(".metro-cache"),
-    ...fs.globSync("node_modules/.cache/metro"),
+    path.join(projectRoot, ".metro-cache"),
+    path.join(projectRoot, "node_modules/.cache/metro"),
   ];
 
   for (const dir of cacheDirs) {
-    fs.rmSync(dir, { recursive: true, force: true });
+    if (fs.existsSync(dir)) {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
   }
 
   console.log("Cache cleared");
@@ -105,7 +123,11 @@ async function checkMetroHealth() {
   }
 }
 
-async function startMetro(expoPublicDomain) {
+function getExpoPublicReplId() {
+  return process.env.REPL_ID || process.env.EXPO_PUBLIC_REPL_ID;
+}
+
+async function startMetro(expoPublicDomain, expoPublicReplId) {
   const isRunning = await checkMetroHealth();
   if (isRunning) {
     console.log("Metro already running");
@@ -117,12 +139,30 @@ async function startMetro(expoPublicDomain) {
   const env = {
     ...process.env,
     EXPO_PUBLIC_DOMAIN: expoPublicDomain,
+    EXPO_PUBLIC_REPL_ID: expoPublicReplId,
   };
-  metroProcess = spawn("npm", ["run", "expo:start:static:build"], {
-    stdio: ["ignore", "pipe", "pipe"],
-    detached: false,
-    env,
-  });
+
+  if (expoPublicReplId) {
+    console.log(`Setting EXPO_PUBLIC_REPL_ID=${expoPublicReplId}`);
+  }
+
+  metroProcess = spawn(
+    "pnpm",
+    [
+      "exec",
+      "expo",
+      "start",
+      "--no-dev",
+      "--minify",
+      "--localhost",
+    ],
+    {
+      stdio: ["ignore", "pipe", "pipe"],
+      detached: false,
+      cwd: projectRoot,
+      env,
+    },
+  );
 
   if (metroProcess.stdout) {
     metroProcess.stdout.on("data", (data) => {
@@ -188,8 +228,9 @@ async function downloadFile(url, outputPath) {
 }
 
 async function downloadBundle(platform, timestamp) {
-  // For expo-router apps, the entry is node_modules/expo-router/entry
-  const url = new URL("http://localhost:8081/node_modules/expo-router/entry.bundle");
+  const entryPath = path.resolve(projectRoot, "node_modules", "expo-router", "entry");
+  const bundlePath = path.relative(workspaceRoot, entryPath);
+  const url = new URL(`http://localhost:8081/${bundlePath}.bundle`);
   url.searchParams.set("platform", platform);
   url.searchParams.set("dev", "false");
   url.searchParams.set("hot", "false");
@@ -246,67 +287,32 @@ async function downloadBundlesAndManifests(timestamp) {
   console.log("This may take several minutes for production builds...");
 
   try {
-    const results = await Promise.allSettled([
-      downloadBundle("ios", timestamp),
-      downloadBundle("android", timestamp),
+    // Bundles are sequential — Metro can't handle both platforms simultaneously
+    // without stalling. Manifests are cheap and run in parallel after.
+    await downloadBundle("ios", timestamp);
+    await downloadBundle("android", timestamp);
+
+    const [iosManifest, androidManifest] = await Promise.all([
       downloadManifest("ios"),
       downloadManifest("android"),
     ]);
 
-    const failures = results
-      .map((result, index) => ({ result, index }))
-      .filter(({ result }) => result.status === "rejected");
-
-    if (failures.length > 0) {
-      const errorMessages = failures.map(({ result, index }) => {
-        const names = [
-          "iOS bundle",
-          "Android bundle",
-          "iOS manifest",
-          "Android manifest",
-        ];
-        return `  - ${names[index]}: ${result.reason?.message || result.reason}`;
-      });
-
-      exitWithError(`Download failed:\n${errorMessages.join("\n")}`);
-    }
-
-    const iosManifest =
-      results[2].status === "fulfilled" ? results[2].value : null;
-    const androidManifest =
-      results[3].status === "fulfilled" ? results[3].value : null;
-
     console.log("All downloads completed successfully");
     return { ios: iosManifest, android: androidManifest };
   } catch (error) {
-    exitWithError(`Unexpected download error: ${error.message}`);
+    exitWithError(`Download failed: ${error.message}`);
   }
 }
 
 function extractAssets(timestamp) {
+  const staticBuild = path.join(projectRoot, "static-build");
   const bundles = {
     ios: fs.readFileSync(
-      path.join(
-        "static-build",
-        timestamp,
-        "_expo",
-        "static",
-        "js",
-        "ios",
-        "bundle.js",
-      ),
+      path.join(staticBuild, timestamp, "_expo", "static", "js", "ios", "bundle.js"),
       "utf-8",
     ),
     android: fs.readFileSync(
-      path.join(
-        "static-build",
-        timestamp,
-        "_expo",
-        "static",
-        "js",
-        "android",
-        "bundle.js",
-      ),
+      path.join(staticBuild, timestamp, "_expo", "static", "js", "android", "bundle.js"),
       "utf-8",
     ),
   };
@@ -357,13 +363,11 @@ async function downloadAssets(assets, timestamp) {
     return 0;
   }
 
-  console.log("Downloading assets...");
+  console.log("Copying assets...");
   let successCount = 0;
   const failures = [];
 
   const downloadPromises = assets.map(async (asset) => {
-    const platform = Array.from(asset.platforms)[0];
-
     const tempUrl = new URL(`http://localhost:8081${asset.originalPath}`);
     const unstablePath = tempUrl.searchParams.get("unstable_path");
 
@@ -372,13 +376,9 @@ async function downloadAssets(assets, timestamp) {
     }
 
     const decodedPath = decodeURIComponent(unstablePath);
-    const metroUrl = new URL(
-      `http://localhost:8081${path.posix.join("/assets", decodedPath, asset.filename)}`,
-    );
-    metroUrl.searchParams.set("platform", platform);
-    metroUrl.searchParams.set("hash", asset.hash);
 
     const outputDir = path.join(
+      projectRoot,
       "static-build",
       timestamp,
       "_expo",
@@ -390,13 +390,21 @@ async function downloadAssets(assets, timestamp) {
     const output = path.join(outputDir, asset.filename);
 
     try {
-      await downloadFile(metroUrl.toString(), output);
+      const candidates = [
+        path.join(projectRoot, decodedPath, asset.filename),
+        path.join(workspaceRoot, decodedPath, asset.filename),
+      ];
+      const found = candidates.find((p) => fs.existsSync(p));
+      if (!found) {
+        throw new Error(`Asset not found on disk: ${asset.filename}`);
+      }
+      fs.copyFileSync(found, output);
       successCount++;
     } catch (error) {
       failures.push({
         filename: asset.filename,
         error: error.message,
-        url: metroUrl.toString(),
+        url: asset.originalPath,
       });
     }
   });
@@ -412,13 +420,14 @@ async function downloadAssets(assets, timestamp) {
     exitWithError(errorMsg);
   }
 
-  console.log(`Downloaded ${successCount} assets`);
+  console.log(`Copied ${successCount} assets`);
   return successCount;
 }
 
 function updateBundleUrls(timestamp, baseUrl) {
   const updateForPlatform = (platform) => {
     const bundlePath = path.join(
+      projectRoot,
       "static-build",
       timestamp,
       "_expo",
@@ -442,7 +451,7 @@ function updateBundleUrls(timestamp, baseUrl) {
         }
 
         const decodedPath = decodeURIComponent(unstablePath);
-        return `httpServerLocation:"${baseUrl}/${timestamp}/_expo/static/js/${decodedPath}"`;
+        return `httpServerLocation:"${baseUrl}${basePath}/${timestamp}/_expo/static/js/${decodedPath}"`;
       },
     );
 
@@ -460,7 +469,7 @@ function updateManifests(manifests, timestamp, baseUrl, assetsByHash) {
       exitWithError(`Malformed manifest for ${platform}`);
     }
 
-    manifest.launchAsset.url = `${baseUrl}/${timestamp}/_expo/static/js/${platform}/bundle.js`;
+    manifest.launchAsset.url = `${baseUrl}${basePath}/${timestamp}/_expo/static/js/${platform}/bundle.js`;
     manifest.launchAsset.key = `bundle-${timestamp}`;
     manifest.createdAt = new Date(
       Number(timestamp.split("-")[0]),
@@ -481,12 +490,12 @@ function updateManifests(manifests, timestamp, baseUrl, assetsByHash) {
         const assetInfo = assetsByHash.get(hash);
         if (!assetInfo) return;
 
-        asset.url = `${baseUrl}/${timestamp}/_expo/static/js/${assetInfo.relativePath}/${assetInfo.filename}`;
+        asset.url = `${baseUrl}${basePath}/${timestamp}/_expo/static/js/${assetInfo.relativePath}/${assetInfo.filename}`;
       });
     }
 
     fs.writeFileSync(
-      path.join("static-build", platform, "manifest.json"),
+      path.join(projectRoot, "static-build", platform, "manifest.json"),
       JSON.stringify(manifest, null, 2),
     );
   };
@@ -502,15 +511,16 @@ async function main() {
   setupSignalHandlers();
 
   const domain = getDeploymentDomain();
+  const expoPublicReplId = getExpoPublicReplId();
   const baseUrl = `https://${domain}`;
   const timestamp = `${Date.now()}-${process.pid}`;
 
   prepareDirectories(timestamp);
   clearMetroCache();
 
-  await startMetro(domain);
+  await startMetro(domain, expoPublicReplId);
 
-  const downloadTimeout = 300000;
+  const downloadTimeout = 600000;
   const downloadPromise = downloadBundlesAndManifests(timestamp);
   const timeoutPromise = new Promise((_, reject) => {
     setTimeout(() => {
