@@ -50,7 +50,7 @@ import { getShopById, getProductById } from "@/constants/seed-data";
 //   - no group chats — each conversation has exactly two participants
 // -----------------------------------------------------------------------------
 
-type SocialTab = "following" | "followers" | "inbox";
+type SocialTab = "discover" | "following" | "followers" | "inbox";
 type InboxTab = "people" | "shops";
 
 function formatTime(iso: string): string {
@@ -67,7 +67,8 @@ const SHOP_ACCOUNT_TYPES: ReadonlyArray<string> = ["shop"];
 export default function SocialScreen() {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
-  const { conversations, followedUserIds } = useAppContext();
+  const { conversations, followedUserIds, toggleFollowUser, isFollowingUser } =
+    useAppContext();
   const [tab, setTab] = useState<SocialTab>("inbox");
   const [inboxTab, setInboxTab] = useState<InboxTab>("people");
   const [search, setSearch] = useState<string>("");
@@ -96,6 +97,20 @@ export default function SocialScreen() {
   const followerUsers = useMemo<CommunityUser[]>(() => {
     if (!user) return [];
     return getFollowersForUser(user.id);
+  }, [user?.id]);
+
+  // ---------------------------------------------------------------------------
+  // Discover — everyone the current user isn't already following.
+  // ---------------------------------------------------------------------------
+  // Excludes self and already-followed users so the list is purely "new
+  // people to find". Once the user taps Follow, the row stays in place
+  // (button flips to Following) instead of vanishing — disappearing rows
+  // make a follow-spree feel jarring. The list re-evaluates on next mount
+  // so it stays manageable across sessions.
+  const discoverUsers = useMemo<CommunityUser[]>(() => {
+    return SEED_USERS.filter(
+      (u) => u.id !== user?.id && !followedUserIds.includes(u.id),
+    );
   }, [user?.id]);
 
   // ---------------------------------------------------------------------------
@@ -184,6 +199,58 @@ export default function SocialScreen() {
     );
   }
 
+  // Discover row — same avatar/name/sub layout as renderUserRow but with
+  // a Follow / Following toggle button on the right instead of a chevron.
+  // Tapping the row body still navigates to the profile; the button
+  // stops propagation so following doesn't double-fire.
+  function renderDiscoverRow(u: CommunityUser) {
+    const following = isFollowingUser(u.id);
+    return (
+      <Pressable
+        style={styles.userRow}
+        onPress={() => router.push(`/user/${u.id}`)}
+        testID={`discover-user-${u.id}`}
+      >
+        <Image source={{ uri: u.avatarUrl }} style={styles.userAvatar} />
+        <View style={styles.userInfo}>
+          <Text style={styles.userName} numberOfLines={1}>
+            {u.fullName}
+          </Text>
+          <Text style={styles.userSub} numberOfLines={1}>
+            @{u.username} · {u.city}
+          </Text>
+          {!!u.bio && (
+            <Text style={styles.userBio} numberOfLines={1}>
+              {u.bio}
+            </Text>
+          )}
+        </View>
+        <Pressable
+          style={[
+            styles.followBtn,
+            following && styles.followBtnActive,
+          ]}
+          onPress={(e) => {
+            e.stopPropagation();
+            toggleFollowUser(u.id);
+          }}
+          testID={`discover-follow-${u.id}`}
+          accessibilityRole="button"
+          accessibilityLabel={following ? "Unfollow" : "Follow"}
+        >
+          <Text
+            style={[
+              styles.followBtnText,
+              following && styles.followBtnTextActive,
+            ]}
+          >
+            {following ? "Following" : "Follow"}
+          </Text>
+        </Pressable>
+      </Pressable>
+    );
+  }
+
   function renderConvRow(conv: Conversation) {
     const name = getConvName(conv);
     return (
@@ -240,6 +307,40 @@ export default function SocialScreen() {
           }
           contentContainerStyle={{ paddingBottom: bottomPad }}
           keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        />
+      );
+    }
+
+    if (tab === "discover") {
+      return (
+        <FlatList
+          data={discoverUsers}
+          keyExtractor={(u) => u.id}
+          renderItem={({ item }) => renderDiscoverRow(item)}
+          ItemSeparatorComponent={() => <View style={styles.sep} />}
+          ListHeaderComponent={
+            <View style={styles.discoverHeader}>
+              <Text style={styles.discoverHeaderTitle}>People to follow</Text>
+              <Text style={styles.discoverHeaderDesc}>
+                Find taste you trust. Follow to shape your feed.
+              </Text>
+            </View>
+          }
+          ListEmptyComponent={
+            <View style={styles.empty}>
+              <Ionicons
+                name="sparkles-outline"
+                size={42}
+                color={Colors.textTertiary}
+              />
+              <Text style={styles.emptyTitle}>You're following everyone</Text>
+              <Text style={styles.emptyDesc}>
+                Nice taste. New people will show up here as the community grows.
+              </Text>
+            </View>
+          }
+          contentContainerStyle={{ paddingBottom: bottomPad, flexGrow: 1 }}
           showsVerticalScrollIndicator={false}
         />
       );
@@ -420,6 +521,7 @@ export default function SocialScreen() {
         <View style={styles.pills} testID="social-tabs">
           {(
             [
+              { key: "discover", label: "Discover" },
               { key: "following", label: "Following" },
               { key: "followers", label: "Followers" },
               { key: "inbox", label: "Inbox" },
@@ -567,6 +669,50 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_400Regular",
     fontSize: 12,
     color: Colors.textSecondary,
+  },
+  userBio: {
+    fontFamily: "Inter_400Regular",
+    fontSize: 12,
+    color: Colors.textTertiary,
+    marginTop: 2,
+  },
+  followBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 999,
+    backgroundColor: Colors.text,
+    borderWidth: 1,
+    borderColor: Colors.text,
+  },
+  followBtnActive: {
+    backgroundColor: Colors.surface,
+    borderColor: Colors.border,
+  },
+  followBtnText: {
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 12,
+    color: Colors.surface,
+    letterSpacing: 0.3,
+  },
+  followBtnTextActive: {
+    color: Colors.textSecondary,
+  },
+  discoverHeader: {
+    paddingHorizontal: 20,
+    paddingTop: 4,
+    paddingBottom: 14,
+    gap: 4,
+  },
+  discoverHeaderTitle: {
+    fontFamily: "PlayfairDisplay_700Bold",
+    fontSize: 18,
+    color: Colors.text,
+  },
+  discoverHeaderDesc: {
+    fontFamily: "Inter_400Regular",
+    fontSize: 13,
+    color: Colors.textSecondary,
+    lineHeight: 18,
   },
   convRow: {
     flexDirection: "row",
