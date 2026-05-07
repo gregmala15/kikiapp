@@ -35,12 +35,13 @@ export default function AccountTypeScreen() {
       // Shoppers always see the intro slideshow on signup so we can
       // showcase what makes Reliq different (verified shops, hidden
       // gems, style influences, recommendations) before they land in
-      // the feed. Shop accounts skip it — they go straight to setting
-      // up their store.
+      // the feed. Shop accounts skip the buyer slideshow entirely and
+      // go straight into shop-setup so they can publish their profile
+      // before seeing the seller dashboard.
       if (selected === "user") {
         router.replace("/onboarding");
       } else {
-        router.replace("/(tabs)");
+        router.replace("/shop-setup");
       }
     } catch (e: any) {
       Alert.alert("Registration failed", e.message);

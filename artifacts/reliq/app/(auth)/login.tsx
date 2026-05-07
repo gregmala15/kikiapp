@@ -31,7 +31,10 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       await login(email.trim(), password);
-      router.replace("/(tabs)");
+      // Route through the index gate so shop accounts land in
+      // (shop-tabs) and shoppers in (tabs). Going straight to (tabs)
+      // would force shops into the buyer experience.
+      router.replace("/");
     } catch (e: any) {
       Alert.alert("Login failed", e.message);
     } finally {

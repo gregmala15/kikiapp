@@ -42,6 +42,10 @@ export default function ShopSetupScreen() {
       Alert.alert("Missing fields", "Please fill in all required fields.");
       return;
     }
+    // Capture the create-vs-edit distinction before the save flips state,
+    // so the post-save routing is correct: brand-new shops go forward
+    // into the dashboard; edits just pop back to wherever they came from.
+    const wasCreating = !userShop;
     setLoading(true);
     try {
       await createShop({
@@ -54,11 +58,22 @@ export default function ShopSetupScreen() {
         isPhysical,
         address: address.trim(),
       });
-      Alert.alert(
-        "Shop created!",
-        "Your shop is ready. Start adding products to your rack.",
-        [{ text: "Great!", onPress: () => router.back() }]
-      );
+      if (wasCreating) {
+        Alert.alert(
+          "Shop created!",
+          "Your shop is ready. Start adding products to your rack.",
+          [
+            {
+              text: "Great!",
+              onPress: () => router.replace("/(shop-tabs)"),
+            },
+          ],
+        );
+      } else {
+        Alert.alert("Shop updated", "Your changes have been saved.", [
+          { text: "OK", onPress: () => router.back() },
+        ]);
+      }
     } catch (e: any) {
       Alert.alert("Error", e.message);
     } finally {

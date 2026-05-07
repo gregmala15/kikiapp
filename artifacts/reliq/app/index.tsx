@@ -12,10 +12,18 @@ export default function Index() {
 
   useEffect(() => {
     if (isLoading) return;
-    if (user) {
-      router.replace("/(tabs)");
-    } else {
+    if (!user) {
       router.replace("/(auth)/welcome");
+      return;
+    }
+    // Shops and shoppers get completely different tab bars. The
+    // (shop-tabs) layout itself handles the case where the shop hasn't
+    // set up a profile yet (it shows a "Set up your shop" panel rather
+    // than auto-bouncing to /shop-setup).
+    if (user.accountType === "shop") {
+      router.replace("/(shop-tabs)");
+    } else {
+      router.replace("/(tabs)");
     }
   }, [user, isLoading]);
 

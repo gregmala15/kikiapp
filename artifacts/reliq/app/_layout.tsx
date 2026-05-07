@@ -35,6 +35,7 @@ function RootLayoutNav() {
       <Stack.Screen name="index" />
       <Stack.Screen name="onboarding" options={{ headerShown: false }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="(shop-tabs)" options={{ headerShown: false }} />
       <Stack.Screen
         name="(auth)"
         options={{ presentation: "modal", headerShown: false }}
