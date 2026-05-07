@@ -774,6 +774,326 @@ const sophieInfluences = [
   { userId: "demo-sophie", influenceUserId: "user-noah", level: "light" },
 ];
 
+// ─── Sophie's friend conversations ───────────────────────────────────────────
+
+const friendConversations = [
+  {
+    id: "demo-sophie_user-aria",
+    participantIds: ["demo-sophie", "user-aria"],
+    participantNames: ["sophie_chen", "aria.s"],
+    participantTypes: ["user", "user"],
+    lastMessage: "I'm running there Saturday morning, thank you for the tip 🙏",
+    lastTimestamp: "2026-05-04T19:22:00Z",
+  },
+  {
+    id: "demo-sophie_user-effie",
+    participantIds: ["demo-sophie", "user-effie"],
+    participantNames: ["sophie_chen", "effie.k"],
+    participantTypes: ["user", "user"],
+    lastMessage: "Of course you did 😂 you have to send me photos!",
+    lastTimestamp: "2026-05-05T11:30:00Z",
+  },
+  {
+    id: "demo-sophie_user-mira",
+    participantIds: ["demo-sophie", "user-mira"],
+    participantNames: ["sophie_chen", "mira.t"],
+    participantTypes: ["user", "user"],
+    lastMessage: "Done! I'll bring them Saturday 😊",
+    lastTimestamp: "2026-05-06T14:55:00Z",
+  },
+];
+
+const friendMessages = [
+  // ── Aria ↔ Sophie ──────────────────────────────────────────────────────────
+  {
+    id: "msg-as-001",
+    fromId: "user-aria",
+    fromName: "aria.s",
+    toId: "demo-sophie",
+    conversationId: "demo-sophie_user-aria",
+    content:
+      "Sophie!! I was at Portobello this morning and spotted the most incredible 70s YSL blouse — it had your name written all over it 👀",
+    timestamp: "2026-05-04T10:05:00Z",
+    senderType: "user",
+    receiverType: "user",
+  },
+  {
+    id: "msg-as-002",
+    fromId: "demo-sophie",
+    fromName: "sophie_chen",
+    toId: "user-aria",
+    conversationId: "demo-sophie_user-aria",
+    content: "Stop I'm obsessed, did you get it?? Was it still there??",
+    timestamp: "2026-05-04T10:41:00Z",
+    senderType: "user",
+    receiverType: "user",
+  },
+  {
+    id: "msg-as-003",
+    fromId: "user-aria",
+    fromName: "aria.s",
+    toId: "demo-sophie",
+    conversationId: "demo-sophie_user-aria",
+    content:
+      "I got it but they had a very similar one in ivory — the stall said it might still be there Saturday!",
+    timestamp: "2026-05-04T18:50:00Z",
+    senderType: "user",
+    receiverType: "user",
+  },
+  {
+    id: "msg-as-004",
+    fromId: "demo-sophie",
+    fromName: "sophie_chen",
+    toId: "user-aria",
+    conversationId: "demo-sophie_user-aria",
+    content: "I'm running there Saturday morning, thank you for the tip 🙏",
+    timestamp: "2026-05-04T19:22:00Z",
+    senderType: "user",
+    receiverType: "user",
+  },
+  // ── Effie ↔ Sophie ─────────────────────────────────────────────────────────
+  {
+    id: "msg-es-001",
+    fromId: "user-effie",
+    fromName: "effie.k",
+    toId: "demo-sophie",
+    conversationId: "demo-sophie_user-effie",
+    content:
+      "Have you tried layering the CK trench over a silk slip dress? For summer evenings it would be stunning",
+    timestamp: "2026-05-05T09:15:00Z",
+    senderType: "user",
+    receiverType: "user",
+  },
+  {
+    id: "msg-es-002",
+    fromId: "demo-sophie",
+    fromName: "sophie_chen",
+    toId: "user-effie",
+    conversationId: "demo-sophie_user-effie",
+    content:
+      "I tried it last week and couldn't believe how good it looked! You always know 🖤",
+    timestamp: "2026-05-05T09:48:00Z",
+    senderType: "user",
+    receiverType: "user",
+  },
+  {
+    id: "msg-es-003",
+    fromId: "user-effie",
+    fromName: "effie.k",
+    toId: "demo-sophie",
+    conversationId: "demo-sophie_user-effie",
+    content: "Add some 90s kitten heels and you're done — effortless ✨",
+    timestamp: "2026-05-05T10:02:00Z",
+    senderType: "user",
+    receiverType: "user",
+  },
+  {
+    id: "msg-es-004",
+    fromId: "demo-sophie",
+    fromName: "sophie_chen",
+    toId: "user-effie",
+    conversationId: "demo-sophie_user-effie",
+    content: "Already ordered a pair from a shop in Milan, arriving next week 😅",
+    timestamp: "2026-05-05T11:10:00Z",
+    senderType: "user",
+    receiverType: "user",
+  },
+  {
+    id: "msg-es-005",
+    fromId: "user-effie",
+    fromName: "effie.k",
+    toId: "demo-sophie",
+    conversationId: "demo-sophie_user-effie",
+    content: "Of course you did 😂 you have to send me photos!",
+    timestamp: "2026-05-05T11:30:00Z",
+    senderType: "user",
+    receiverType: "user",
+  },
+  // ── Mira ↔ Sophie ──────────────────────────────────────────────────────────
+  {
+    id: "msg-ms-001",
+    fromId: "user-mira",
+    fromName: "mira.t",
+    toId: "demo-sophie",
+    conversationId: "demo-sophie_user-mira",
+    content:
+      "Okay I found the most perfect vintage Levi's 501s for you at Spitalfields — 26 waist, that's you right?",
+    timestamp: "2026-05-06T12:30:00Z",
+    senderType: "user",
+    receiverType: "user",
+  },
+  {
+    id: "msg-ms-002",
+    fromId: "demo-sophie",
+    fromName: "sophie_chen",
+    toId: "user-mira",
+    conversationId: "demo-sophie_user-mira",
+    content: "Yes! 26 is perfect, how much are they??",
+    timestamp: "2026-05-06T12:44:00Z",
+    senderType: "user",
+    receiverType: "user",
+  },
+  {
+    id: "msg-ms-003",
+    fromId: "user-mira",
+    fromName: "mira.t",
+    toId: "demo-sophie",
+    conversationId: "demo-sophie_user-mira",
+    content:
+      "£45 from a stall near the entrance — I can grab them if you want, transfer me?",
+    timestamp: "2026-05-06T13:10:00Z",
+    senderType: "user",
+    receiverType: "user",
+  },
+  {
+    id: "msg-ms-004",
+    fromId: "demo-sophie",
+    fromName: "sophie_chen",
+    toId: "user-mira",
+    conversationId: "demo-sophie_user-mira",
+    content: "Please!! Transferring now 🙏 you're an actual legend",
+    timestamp: "2026-05-06T13:25:00Z",
+    senderType: "user",
+    receiverType: "user",
+  },
+  {
+    id: "msg-ms-005",
+    fromId: "user-mira",
+    fromName: "mira.t",
+    toId: "demo-sophie",
+    conversationId: "demo-sophie_user-mira",
+    content: "Done! I'll bring them Saturday 😊",
+    timestamp: "2026-05-06T14:55:00Z",
+    senderType: "user",
+    receiverType: "user",
+  },
+];
+
+// ─── The Vault — extra buyer conversations ────────────────────────────────────
+
+const extraVaultConversations = [
+  {
+    id: "buyer-felix_demo-vault",
+    participantIds: ["buyer-felix", "demo-vault"],
+    participantNames: ["felix.r", "The Vault London"],
+    participantTypes: ["user", "shop"],
+    shopId: VAULT_SHOP_ID,
+    lastMessage:
+      "They're wonderful pieces — the Issey Miyake in particular is very special. Enjoy! 🌿",
+    lastTimestamp: "2026-05-05T18:30:00Z",
+  },
+  {
+    id: "buyer-grace_demo-vault",
+    participantIds: ["buyer-grace", "demo-vault"],
+    participantNames: ["grace.l", "The Vault London"],
+    participantTypes: ["user", "shop"],
+    shopId: VAULT_SHOP_ID,
+    lastMessage:
+      "Wonderful! The Mugler is truly one of our best pieces — you're going to love it.",
+    lastTimestamp: "2026-05-06T09:55:00Z",
+  },
+];
+
+const extraVaultMessages = [
+  // ── Felix ↔ The Vault ─────────────────────────────────────────────────────
+  {
+    id: "msg-fv-001",
+    fromId: "buyer-felix",
+    fromName: "felix.r",
+    toId: "demo-vault",
+    conversationId: "buyer-felix_demo-vault",
+    content:
+      "Hi! Just placed an order for the Issey Miyake skirt and crochet maxi. Confirming you ship to E1?",
+    timestamp: "2026-05-05T17:55:00Z",
+    senderType: "user",
+    receiverType: "shop",
+  },
+  {
+    id: "msg-fv-002",
+    fromId: "demo-vault",
+    fromName: "The Vault London",
+    toId: "buyer-felix",
+    conversationId: "buyer-felix_demo-vault",
+    content:
+      "Hi Felix! Yes we ship across London and the UK — your order is confirmed and we'll have it packed and dispatched within 1–2 days 🙌",
+    timestamp: "2026-05-05T18:10:00Z",
+    senderType: "shop",
+    receiverType: "user",
+  },
+  {
+    id: "msg-fv-003",
+    fromId: "buyer-felix",
+    fromName: "felix.r",
+    toId: "demo-vault",
+    conversationId: "buyer-felix_demo-vault",
+    content: "Amazing, thank you! Really excited about both pieces.",
+    timestamp: "2026-05-05T18:20:00Z",
+    senderType: "user",
+    receiverType: "shop",
+  },
+  {
+    id: "msg-fv-004",
+    fromId: "demo-vault",
+    fromName: "The Vault London",
+    toId: "buyer-felix",
+    conversationId: "buyer-felix_demo-vault",
+    content:
+      "They're wonderful pieces — the Issey Miyake in particular is very special. Enjoy! 🌿",
+    timestamp: "2026-05-05T18:30:00Z",
+    senderType: "shop",
+    receiverType: "user",
+  },
+  // ── Grace ↔ The Vault ─────────────────────────────────────────────────────
+  {
+    id: "msg-gv-001",
+    fromId: "buyer-grace",
+    fromName: "grace.l",
+    toId: "demo-vault",
+    conversationId: "buyer-grace_demo-vault",
+    content:
+      "Hi! Are the Mary Quant miniskirt and the Mugler power blazer still available? I'd love to order both.",
+    productId: "vault-p07",
+    timestamp: "2026-05-06T09:12:00Z",
+    senderType: "user",
+    receiverType: "shop",
+  },
+  {
+    id: "msg-gv-002",
+    fromId: "demo-vault",
+    fromName: "The Vault London",
+    toId: "buyer-grace",
+    conversationId: "buyer-grace_demo-vault",
+    content:
+      "Hi Grace! The Mugler is still here but the Mary Quant just sold — apologies! We do have a gorgeous similar 60s geometric piece coming in next week. Want me to ping you when it's listed?",
+    timestamp: "2026-05-06T09:32:00Z",
+    senderType: "shop",
+    receiverType: "user",
+  },
+  {
+    id: "msg-gv-003",
+    fromId: "buyer-grace",
+    fromName: "grace.l",
+    toId: "demo-vault",
+    conversationId: "buyer-grace_demo-vault",
+    content: "Yes please! And I'll order the Mugler right now 🙌",
+    timestamp: "2026-05-06T09:44:00Z",
+    senderType: "user",
+    receiverType: "shop",
+  },
+  {
+    id: "msg-gv-004",
+    fromId: "demo-vault",
+    fromName: "The Vault London",
+    toId: "buyer-grace",
+    conversationId: "buyer-grace_demo-vault",
+    content:
+      "Wonderful! The Mugler is truly one of our best pieces — you're going to love it. I'll message as soon as the 60s piece is listed.",
+    timestamp: "2026-05-06T09:55:00Z",
+    senderType: "shop",
+    receiverType: "user",
+  },
+];
+
 // ─── Export: AsyncStorage pairs ready for multiSet ───────────────────────────
 
 export const SOPHIE_STORAGE_PAIRS: Array<[string, string]> = [
@@ -797,8 +1117,8 @@ export const SOPHIE_STORAGE_PAIRS: Array<[string, string]> = [
   ["kiki_cart_demo-sophie", JSON.stringify([])],
   ["kiki_orders_demo-sophie", JSON.stringify(sophieOrders)],
   ["kiki_user_shop_demo-sophie", JSON.stringify(null)],
-  ["kiki_conversations_demo-sophie", JSON.stringify(sophieConversations)],
-  ["kiki_messages_demo-sophie", JSON.stringify(sophieMessages)],
+  ["kiki_conversations_demo-sophie", JSON.stringify([...sophieConversations, ...friendConversations])],
+  ["kiki_messages_demo-sophie", JSON.stringify([...sophieMessages, ...friendMessages])],
   ["kiki_reviews_demo-sophie", JSON.stringify(sophieReviews)],
 ];
 
@@ -811,7 +1131,7 @@ export const VAULT_STORAGE_PAIRS: Array<[string, string]> = [
   ["kiki_cart_demo-vault", JSON.stringify([])],
   ["kiki_orders_demo-vault", JSON.stringify(vaultOrders)],
   ["kiki_user_shop_demo-vault", JSON.stringify(vaultUserShop)],
-  ["kiki_conversations_demo-vault", JSON.stringify(vaultConversations)],
-  ["kiki_messages_demo-vault", JSON.stringify(vaultMessages)],
+  ["kiki_conversations_demo-vault", JSON.stringify([...vaultConversations, ...extraVaultConversations])],
+  ["kiki_messages_demo-vault", JSON.stringify([...vaultMessages, ...extraVaultMessages])],
   ["kiki_reviews_demo-vault", JSON.stringify([])],
 ];
