@@ -11,7 +11,6 @@ import {
   NativeScrollEvent,
 } from "react-native";
 import { router } from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
@@ -19,10 +18,6 @@ import Colors from "@/constants/colors";
 import { useAuth } from "@/contexts/AuthContext";
 
 const { width } = Dimensions.get("window");
-
-// Bumped whenever the slideshow content changes — lets us re-show
-// onboarding to existing users when there's a meaningful update.
-const ONBOARDING_KEY = "reliq_onboarding_seen_v1";
 
 type Slide = {
   key: string;
@@ -79,8 +74,10 @@ export default function OnboardingScreen() {
 
   const isLast = index === SLIDES.length - 1;
 
-  async function finish() {
-    await AsyncStorage.setItem(ONBOARDING_KEY, "1");
+  function finish() {
+    // Slideshow is only ever launched right after a shopper signup, so
+    // a logged-in user always exists by the time we get here. The
+    // welcome fallback is just defensive in case routing is replayed.
     if (user) router.replace("/(tabs)");
     else router.replace("/(auth)/welcome");
   }
