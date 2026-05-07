@@ -164,14 +164,12 @@ export default function ProductDetailScreen() {
         </View>
 
         <View style={styles.content}>
-          <View style={styles.priceRow}>
-            <Text style={styles.price}>£{product.price}</Text>
+          <View style={styles.titleRow}>
+            <Text style={styles.title}>{product.title}</Text>
             <View style={styles.categoryBadge}>
               <Text style={styles.categoryText}>{product.category}</Text>
             </View>
           </View>
-
-          <Text style={styles.title}>{product.title}</Text>
 
           <View style={styles.metaGrid}>
             <View style={styles.metaItem}>
@@ -188,6 +186,11 @@ export default function ProductDetailScreen() {
               <Text style={styles.metaLabel}>ERA</Text>
               <Text style={styles.metaValue}>{product.era}</Text>
             </View>
+          </View>
+
+          <View style={styles.priceBlock}>
+            <Text style={styles.priceLabel}>PRICE</Text>
+            <Text style={styles.price}>£{product.price}</Text>
           </View>
 
           <Text style={styles.descLabel}>Description</Text>
@@ -359,15 +362,32 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   content: { padding: 20, gap: 18 },
-  priceRow: {
+  titleRow: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     justifyContent: "space-between",
+    gap: 12,
+  },
+  priceBlock: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    justifyContent: "space-between",
+    paddingTop: 4,
+    borderTopWidth: 1,
+    borderTopColor: Colors.borderLight,
+  },
+  priceLabel: {
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 11,
+    color: Colors.textTertiary,
+    letterSpacing: 1.5,
+    paddingTop: 10,
   },
   price: {
     fontFamily: "PlayfairDisplay_700Bold",
     fontSize: 32,
     color: Colors.text,
+    paddingTop: 6,
   },
   categoryBadge: {
     backgroundColor: Colors.card,
@@ -381,6 +401,7 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
   },
   title: {
+    flex: 1,
     fontFamily: "PlayfairDisplay_400Regular",
     fontSize: 22,
     color: Colors.text,
