@@ -80,12 +80,6 @@ export function ProductCard({ product, shopName, style }: ProductCardProps) {
           </View>
         )}
 
-        {product.isVintage && !isArchive && !isOneLeft && (
-          <View style={styles.vintageBadge}>
-            <Text style={styles.vintageText}>VINTAGE</Text>
-          </View>
-        )}
-
         <View style={styles.actionStack}>
           <Pressable
             style={[styles.saveButton, saved && styles.saveButtonActive]}
@@ -189,21 +183,6 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   archiveText: {
-    color: "#fff",
-    fontFamily: "Inter_700Bold",
-    fontSize: 10,
-    letterSpacing: 1.5,
-  },
-  vintageBadge: {
-    position: "absolute",
-    bottom: 14,
-    left: 14,
-    backgroundColor: Colors.accent,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 2,
-  },
-  vintageText: {
     color: "#fff",
     fontFamily: "Inter_700Bold",
     fontSize: 10,

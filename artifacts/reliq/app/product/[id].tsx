@@ -145,11 +145,6 @@ export default function ProductDetailScreen() {
             </View>
           )}
           <View style={styles.imageTags}>
-            {product.isVintage && (
-              <View style={styles.vintageBadge}>
-                <Text style={styles.vintageText}>VINTAGE</Text>
-              </View>
-            )}
             {product.era !== "Contemporary" && (
               <View style={styles.eraBadge}>
                 <Text style={styles.eraText}>{product.era}</Text>
@@ -331,18 +326,6 @@ const styles = StyleSheet.create({
     left: 14,
     flexDirection: "row",
     gap: 6,
-  },
-  vintageBadge: {
-    backgroundColor: Colors.accent,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 3,
-  },
-  vintageText: {
-    fontFamily: "Inter_600SemiBold",
-    fontSize: 9,
-    color: "#fff",
-    letterSpacing: 1.5,
   },
   eraBadge: {
     backgroundColor: "rgba(0,0,0,0.55)",

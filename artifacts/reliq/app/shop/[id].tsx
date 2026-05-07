@@ -246,11 +246,6 @@ export default function ShopProfileScreen() {
                         <Text style={styles.soldText}>SOLD</Text>
                       </View>
                     )}
-                    {product.isVintage && (
-                      <View style={styles.vintagePill}>
-                        <Text style={styles.vintagePillText}>V</Text>
-                      </View>
-                    )}
                     <Pressable
                       style={styles.saveBtn}
                       onPress={() => {
@@ -720,22 +715,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#fff",
     letterSpacing: 4,
-  },
-  vintagePill: {
-    position: "absolute",
-    top: 8,
-    left: 8,
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: Colors.accent,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  vintagePillText: {
-    fontFamily: "Inter_700Bold",
-    fontSize: 10,
-    color: "#fff",
   },
   saveBtn: {
     position: "absolute",

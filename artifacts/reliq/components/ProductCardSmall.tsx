@@ -47,11 +47,6 @@ export function ProductCardSmall({ product }: Props) {
             <Text style={styles.soldText}>SOLD</Text>
           </View>
         )}
-        {product.isVintage && (
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>V</Text>
-          </View>
-        )}
         <Pressable
           style={[styles.saveBtn, saved && styles.saveBtnActive]}
           onPress={() => {
@@ -105,22 +100,6 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_700Bold",
     fontSize: 12,
     letterSpacing: 3,
-  },
-  badge: {
-    position: "absolute",
-    top: 8,
-    left: 8,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: GEM_ACCENT,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  badgeText: {
-    fontFamily: "Inter_700Bold",
-    fontSize: 9,
-    color: "#fff",
   },
   saveBtn: {
     position: "absolute",
