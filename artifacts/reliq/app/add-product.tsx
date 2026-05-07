@@ -59,7 +59,9 @@ export default function AddProductScreen() {
   const [era, setEra] = useState("Contemporary");
   const [imageUrl, setImageUrl] = useState("");
   const [quantity, setQuantity] = useState("1");
-  const [isVintage, setIsVintage] = useState(false);
+  // Reliq is vintage-only — every listing is a vintage piece by
+  // definition, so the user-facing toggle was removed and isVintage is
+  // hardcoded to true at save time.
   const [loading, setLoading] = useState(false);
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
@@ -89,7 +91,7 @@ export default function AddProductScreen() {
         imageUrl: imageUrl.trim() ||
           "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80",
         quantity: parseInt(quantity) || 1,
-        isVintage,
+        isVintage: true,
       });
       Alert.alert("Product added!", "Your piece is now on your rack.", [
         { text: "Add another", onPress: () => {
@@ -253,20 +255,6 @@ export default function AddProductScreen() {
           <SelectGroup options={ERAS} selected={era} onSelect={setEra} />
         </View>
 
-        <View style={styles.toggleRow}>
-          <Text style={styles.toggleLabel}>Is this a vintage piece?</Text>
-          <Pressable
-            style={[styles.toggle, isVintage && styles.toggleActive]}
-            onPress={() => setIsVintage(!isVintage)}
-          >
-            <View
-              style={[
-                styles.toggleThumb,
-                isVintage && styles.toggleThumbActive,
-              ]}
-            />
-          </Pressable>
-        </View>
       </ScrollView>
 
       <View
