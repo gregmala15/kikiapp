@@ -20,7 +20,13 @@ import { Image } from "expo-image";
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const { user, logout } = useAuth();
-  const { savedProductIds, followedShopIds, orders, userShop } = useAppContext();
+  const {
+    savedProductIds,
+    followedShopIds,
+    followedUserIds,
+    orders,
+    userShop,
+  } = useAppContext();
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const bottomPad = Platform.OS === "web" ? 84 : insets.bottom + 100;
@@ -150,8 +156,13 @@ export default function ProfileScreen() {
         </View>
         <View style={styles.statDivider} />
         <View style={styles.stat}>
-          <Text style={styles.statNumber}>{followedShopIds.length}</Text>
+          <Text style={styles.statNumber}>{followedUserIds.length}</Text>
           <Text style={styles.statLabel}>Following</Text>
+        </View>
+        <View style={styles.statDivider} />
+        <View style={styles.stat}>
+          <Text style={styles.statNumber}>{followedShopIds.length}</Text>
+          <Text style={styles.statLabel}>Shops</Text>
         </View>
         <View style={styles.statDivider} />
         <View style={styles.stat}>

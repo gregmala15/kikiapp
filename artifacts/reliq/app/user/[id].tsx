@@ -68,9 +68,16 @@ export default function UserProfileScreen() {
     () => (id ? getStyleTagsForUser(id, 6) : []),
     [id],
   );
+  // Seed followers + 1 if the current viewer is following this user, so
+  // the count reflects the act of following live (the seed list never
+  // changes; tapping Follow has to bump the visible number itself).
+  const viewerFollowing = id ? isFollowingUser(id) : false;
   const followerCount = useMemo<number>(
-    () => (id ? getFollowersForUser(id).length : 0),
-    [id],
+    () =>
+      id
+        ? getFollowersForUser(id).length + (viewerFollowing ? 1 : 0)
+        : 0,
+    [id, viewerFollowing],
   );
   // For non-current users we don't have a real followedUserIds list (the
   // demo's social graph only exists for the auth user) — derive a stable
