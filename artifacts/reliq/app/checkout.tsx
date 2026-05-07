@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -15,6 +15,12 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import Colors from "@/constants/colors";
 import { useAppContext } from "@/contexts/AppContext";
+import { getShopById, Shop } from "@/constants/seed-data";
+
+function shipEstimate(shop: Shop | undefined): string {
+  if (!shop) return "Standard delivery";
+  return shop.city === "Rome" ? "Ships in 5–8 days" : "Ships in 2–4 days";
+}
 
 export default function CheckoutScreen() {
   const insets = useSafeAreaInsets();
@@ -28,6 +34,31 @@ export default function CheckoutScreen() {
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom;
+
+  // Same per-shop bundling shown in the bag, so the user sees exactly
+  // what they'll receive (and from whom) before paying.
+  const groups = useMemo(() => {
+    const map = new Map<
+      string,
+      { shop: Shop | undefined; items: typeof cart; subtotal: number }
+    >();
+    for (const item of cart) {
+      const shopId = item.product.shopId;
+      const lineTotal = item.product.price * item.quantity;
+      const existing = map.get(shopId);
+      if (existing) {
+        existing.items.push(item);
+        existing.subtotal += lineTotal;
+      } else {
+        map.set(shopId, {
+          shop: getShopById(shopId),
+          items: [item],
+          subtotal: lineTotal,
+        });
+      }
+    }
+    return Array.from(map.entries()).map(([shopId, v]) => ({ shopId, ...v }));
+  }, [cart]);
 
   async function handlePlaceOrder() {
     if (!name.trim() || !line1.trim() || !city.trim() || !postcode.trim()) {
@@ -68,20 +99,40 @@ export default function CheckoutScreen() {
         contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 24, paddingBottom: 120 }}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={styles.sectionLabel}>Order Summary</Text>
-        <View style={styles.summary}>
-          {cart.map((item) => (
-            <View key={item.product.id} style={styles.summaryRow}>
-              <Text style={styles.summaryItem} numberOfLines={1}>
-                {item.product.title}
-              </Text>
-              <Text style={styles.summaryQty}>×{item.quantity}</Text>
-              <Text style={styles.summaryPrice}>
-                £{(item.product.price * item.quantity).toFixed(2)}
+        <Text style={styles.sectionLabel}>
+          Order Summary
+          {groups.length > 1 ? ` · ${groups.length} parcels` : ""}
+        </Text>
+        {groups.map((group) => (
+          <View key={group.shopId} style={[styles.summary, { marginBottom: 12 }]}>
+            <View style={styles.shopHeaderRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.shopHeaderName} numberOfLines={1}>
+                  {group.shop?.name ?? "Shop"}
+                </Text>
+                <Text style={styles.shopHeaderMeta}>
+                  {shipEstimate(group.shop)}
+                </Text>
+              </View>
+              <Text style={styles.shopHeaderSubtotal}>
+                £{group.subtotal.toFixed(2)}
               </Text>
             </View>
-          ))}
-          <View style={styles.divider} />
+            <View style={styles.divider} />
+            {group.items.map((item) => (
+              <View key={item.product.id} style={styles.summaryRow}>
+                <Text style={styles.summaryItem} numberOfLines={1}>
+                  {item.product.title}
+                </Text>
+                <Text style={styles.summaryQty}>×{item.quantity}</Text>
+                <Text style={styles.summaryPrice}>
+                  £{(item.product.price * item.quantity).toFixed(2)}
+                </Text>
+              </View>
+            ))}
+          </View>
+        ))}
+        <View style={[styles.summary, { marginTop: 4 }]}>
           <View style={styles.totalRow}>
             <Text style={styles.totalLabel}>Total</Text>
             <Text style={styles.total}>£{cartTotal.toFixed(2)}</Text>
@@ -245,6 +296,28 @@ const styles = StyleSheet.create({
     color: Colors.text,
   },
   divider: { height: 1, backgroundColor: Colors.border, marginVertical: 4 },
+  shopHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 4,
+  },
+  shopHeaderName: {
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 14,
+    color: Colors.text,
+  },
+  shopHeaderMeta: {
+    fontFamily: "Inter_400Regular",
+    fontSize: 11,
+    color: Colors.textSecondary,
+    marginTop: 2,
+  },
+  shopHeaderSubtotal: {
+    fontFamily: "Inter_700Bold",
+    fontSize: 14,
+    color: Colors.text,
+  },
   totalRow: {
     flexDirection: "row",
     justifyContent: "space-between",
