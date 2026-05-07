@@ -56,7 +56,14 @@ export function ProductCardSmall({ product }: Props) {
           style={[styles.saveBtn, saved && styles.saveBtnActive]}
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            const wasSaved = saved;
             toggleSaved(product.id);
+            if (!wasSaved) {
+              router.push({
+                pathname: "/save-to-collection",
+                params: { productId: product.id },
+              });
+            }
           }}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >

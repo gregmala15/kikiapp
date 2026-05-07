@@ -77,7 +77,14 @@ function FeaturedGem({ product }: { product: Product }) {
         style={[styles.featuredSave, saved && styles.featuredSaveActive]}
         onPress={() => {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          const wasSaved = saved;
           toggleSaved(product.id);
+          if (!wasSaved) {
+            router.push({
+              pathname: "/save-to-collection",
+              params: { productId: product.id },
+            });
+          }
         }}
       >
         <Ionicons

@@ -35,7 +35,14 @@ export function ProductCard({ product, shopName, style }: ProductCardProps) {
 
   function handleSave() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const wasSaved = saved;
     toggleSaved(product.id);
+    if (!wasSaved) {
+      router.push({
+        pathname: "/save-to-collection",
+        params: { productId: product.id },
+      });
+    }
   }
 
   function handleRecommend(e?: { stopPropagation?: () => void }) {
