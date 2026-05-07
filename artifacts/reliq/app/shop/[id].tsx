@@ -151,7 +151,32 @@ export default function ShopProfileScreen() {
             </Pressable>
           </View>
 
-          <Text style={styles.description}>{shop.description}</Text>
+          <View style={styles.aboutSection}>
+            <View style={styles.aboutHeaderRow}>
+              <Text style={styles.aboutTitle}>Our Story</Text>
+              {shop.founded !== undefined && (
+                <Text style={styles.aboutMeta}>
+                  Est. {shop.founded} · {shop.city}
+                </Text>
+              )}
+            </View>
+            <Text style={styles.description}>
+              {shop.story ?? shop.description}
+            </Text>
+            {shop.story && (
+              <Text style={styles.aboutTagline}>{shop.description}</Text>
+            )}
+            {shop.highlights && shop.highlights.length > 0 && (
+              <View style={styles.highlights}>
+                {shop.highlights.map((h) => (
+                  <View key={h} style={styles.highlightChip}>
+                    <Feather name="check" size={11} color={Colors.accent} />
+                    <Text style={styles.highlightText}>{h}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
+          </View>
 
           <View style={styles.social}>
             <Feather name="instagram" size={14} color={Colors.textSecondary} />
@@ -342,6 +367,61 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.textSecondary,
     lineHeight: 21,
+  },
+  aboutSection: {
+    marginTop: 4,
+    paddingTop: 18,
+    paddingBottom: 18,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: Colors.border,
+    gap: 10,
+  },
+  aboutHeaderRow: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  aboutTitle: {
+    fontFamily: "PlayfairDisplay_700Bold",
+    fontSize: 20,
+    color: Colors.text,
+    letterSpacing: -0.3,
+  },
+  aboutMeta: {
+    fontFamily: "Inter_500Medium",
+    fontSize: 11,
+    color: Colors.textTertiary,
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
+  },
+  aboutTagline: {
+    fontFamily: "PlayfairDisplay_400Regular_Italic",
+    fontSize: 13,
+    color: Colors.textTertiary,
+    lineHeight: 19,
+    marginTop: -2,
+  },
+  highlights: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 4,
+  },
+  highlightChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    backgroundColor: Colors.accentLight,
+    borderRadius: 14,
+  },
+  highlightText: {
+    fontFamily: "Inter_500Medium",
+    fontSize: 12,
+    color: Colors.accentDark,
   },
   social: {
     flexDirection: "row",

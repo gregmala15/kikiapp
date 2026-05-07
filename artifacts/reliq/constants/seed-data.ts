@@ -12,6 +12,11 @@ export interface Shop {
   email: string;
   followerCount: number;
   tags: string[];
+  // Optional indie-brand "Our Story" fields. Older listings may not have
+  // them; the shop page falls back gracefully to description-only.
+  founded?: number;
+  story?: string;
+  highlights?: string[];
 }
 
 export type ProductCategory =
@@ -59,6 +64,10 @@ export const SEED_SHOPS: Shop[] = [
       "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80",
     socialHandle: "@mercatoantico",
     email: "mercatoantico@rome.it",
+    founded: 2008,
+    story:
+      "Started by Marco Conti as a Sunday-only stall at Porta Portese, Mercato Antico now operates from a small Trastevere studio. Every piece is hand-sourced from estate sales across Lazio and Tuscany, then steamed, repaired and photographed in-house.",
+    highlights: ["Family-run since 2008","Hand-sourced in Italy","Repairs in-house"],
     followerCount: 2847,
     tags: ["vintage", "Italian", "silk", "60s", "90s"],
   },
@@ -73,6 +82,10 @@ export const SEED_SHOPS: Shop[] = [
       "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&q=80",
     socialHandle: "@studiorossi",
     email: "info@studiorossi.it",
+    founded: 2017,
+    story:
+      "Chiara Rossi trained at Polimoda before launching Studio Rossi from her grandmother's apartment in Trastevere. Every garment is cut to order in a two-person atelier, using surplus deadstock fabric from Como mills.",
+    highlights: ["Cut-to-order in Rome","Deadstock Como silk","Two-person atelier"],
     followerCount: 4213,
     tags: ["contemporary", "Italian", "minimal", "Como"],
   },
@@ -87,6 +100,10 @@ export const SEED_SHOPS: Shop[] = [
       "https://images.unsplash.com/photo-1567401893414-76b7b1e5a7a5?w=800&q=80",
     socialHandle: "@viacondottiarchive",
     email: "archive@viacondotti.com",
+    founded: 2015,
+    story:
+      "Run by former Valentino archivist Lucia Marini, Via Condotti Archive specialises in deadstock and pre-owned pieces from Italian houses' golden eras. Each item is documented with provenance and original tags where available.",
+    highlights: ["Provenance documented","Ex-Valentino curator","Authenticated"],
     followerCount: 1923,
     tags: ["archive", "luxury", "deadstock", "Italian labels"],
   },
@@ -101,6 +118,10 @@ export const SEED_SHOPS: Shop[] = [
       "https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=800&q=80",
     socialHandle: "@trasteverethreads",
     email: "hello@trasteverethreads.com",
+    founded: 1998,
+    story:
+      "A neighbourhood institution that began as a market stall and has occupied the same shopfront for over 25 years. Locals drop off pieces from grandmothers' wardrobes; everything is laundered and lightly mended before going on the rail.",
+    highlights: ["25+ years in Trastevere","Locally sourced","Mending included"],
     followerCount: 987,
     tags: ["vintage", "50s", "60s", "70s", "Trastevere"],
   },
@@ -115,6 +136,10 @@ export const SEED_SHOPS: Shop[] = [
       "https://images.unsplash.com/photo-1491553895911-0055eca6402d?w=800&q=80",
     socialHandle: "@pietraduraroma",
     email: "info@pietradura.it",
+    founded: 2012,
+    story:
+      "Father-and-son leatherworkers Giorgio and Luca Pietra hand-stitch every piece in their workshop near Campo de' Fiori. Vegetable-tanned Tuscan leather, brass hardware, no machine seams. Made to outlast you.",
+    highlights: ["Vegetable-tanned leather","Hand-stitched","Father-and-son craft"],
     followerCount: 3102,
     tags: ["leather", "handcrafted", "accessories", "artisan"],
   },
@@ -129,6 +154,10 @@ export const SEED_SHOPS: Shop[] = [
       "https://images.unsplash.com/photo-1558769132-cb1aea458c5e?w=800&q=80",
     socialHandle: "@colosseo_vintage",
     email: "colosseo@vintage.it",
+    founded: 2019,
+    story:
+      "Started by ex-footballer Fabrizio Greco from his personal collection of 80s and 90s Italian sportswear. The shop now sources rare athletic pieces from across Europe; every item is washed and authenticated before listing.",
+    highlights: ["Sportswear specialist","Authenticated","EU-wide sourcing"],
     followerCount: 1544,
     tags: ["sportswear", "80s", "90s", "Italian athletics"],
   },
@@ -143,6 +172,10 @@ export const SEED_SHOPS: Shop[] = [
       "https://images.unsplash.com/photo-1483985988355-763728e1935b?w=800&q=80",
     socialHandle: "@luceatelier",
     email: "luce@atelier.com",
+    founded: 2020,
+    story:
+      "Luce Atelier launched in lockdown by designer Anna Greco, focused on slow-made ready-to-wear in small batches. Each capsule is produced in runs of 30, with surplus fabric returned to mills for recycling.",
+    highlights: ["Batches of 30 only","Zero-waste cutting","Female-founded"],
     followerCount: 5672,
     tags: ["ready-to-wear", "luxury", "draping", "contemporary"],
   },
@@ -157,6 +190,10 @@ export const SEED_SHOPS: Shop[] = [
       "https://images.unsplash.com/photo-1445205170230-053b83016050?w=800&q=80",
     socialHandle: "@portaportese",
     email: "shop@portaportese.com",
+    founded: 2010,
+    story:
+      "The online arm of Rome's legendary Sunday flea market, run by a rotating crew of three lifelong sellers. Fresh stock every Monday from the weekend's haul, photographed and listed within 48 hours.",
+    highlights: ["Fresh stock every Monday","Three-seller collective","Flea market roots"],
     followerCount: 7831,
     tags: ["flea market", "eclectic", "all decades", "fresh arrivals"],
   },
@@ -173,6 +210,10 @@ export const SEED_SHOPS: Shop[] = [
       "https://images.unsplash.com/photo-1524863479829-916d8e77f114?w=800&q=80",
     socialHandle: "@portobelloarchive",
     email: "portobello@archive.co.uk",
+    founded: 2003,
+    story:
+      "Portobello Archive grew out of a single stall on the Friday market and now stocks some of the rarest 60s and 70s British pieces in West London. Many items come with original receipts or magazine tear sheets from their era.",
+    highlights: ["Portobello market origins","Tear-sheet provenance","British 60s/70s focus"],
     followerCount: 6243,
     tags: ["60s", "70s", "mod", "British", "psychedelic"],
   },
@@ -187,6 +228,10 @@ export const SEED_SHOPS: Shop[] = [
       "https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?w=800&q=80",
     socialHandle: "@eastendcollective",
     email: "drops@eastendcollective.co.uk",
+    founded: 2018,
+    story:
+      "A platform for five East London designers sharing a Shoreditch studio. Limited drops of 50 pieces, screen-printed and sewn locally. Every drop tends to sell out in days; sign up for the next release.",
+    highlights: ["Five designers, one roof","Drops of 50","Sewn in Shoreditch"],
     followerCount: 8921,
     tags: ["streetwear", "East London", "limited drops", "bold graphics"],
   },
@@ -201,6 +246,10 @@ export const SEED_SHOPS: Shop[] = [
       "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=800&q=80",
     socialHandle: "@bricklanewrdrb",
     email: "hello@bricklanewardrobe.com",
+    founded: 2011,
+    story:
+      "Founded by Priya Shah, this shop celebrates the layered identity of East London — South Asian textiles, 90s British streetwear, and global vintage all on one rail. Sourced through community networks and family trips.",
+    highlights: ["Community-sourced","South Asian textiles","Female-founded"],
     followerCount: 3817,
     tags: ["multicultural", "90s", "textiles", "streetwear", "global"],
   },
@@ -215,6 +264,10 @@ export const SEED_SHOPS: Shop[] = [
       "https://images.unsplash.com/photo-1469334031218-e382a71b716b?w=800&q=80",
     socialHandle: "@chelseagirlvtg",
     email: "info@chelseagirlvintage.co.uk",
+    founded: 2007,
+    story:
+      "Run by mother-and-daughter team Helen and Sophie Reid, Chelsea Girl specialises in 60s and 70s pieces from the Swinging London era. Many items come from estate sales of original King's Road shoppers.",
+    highlights: ["Estate-sale sourced","Mother-daughter team","King's Road heritage"],
     followerCount: 4109,
     tags: ["60s", "70s", "Swinging London", "dresses", "coats"],
   },
@@ -229,6 +282,10 @@ export const SEED_SHOPS: Shop[] = [
       "https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=800&q=80",
     socialHandle: "@hackneyhands",
     email: "studio@hackneyhands.co.uk",
+    founded: 2016,
+    story:
+      "Every piece is hand-knitted or hand-woven in a Hackney railway-arch studio by founder Aiko Tanaka and a small group of local artisans. Yarn is sourced from British wool collectives; nothing is machine-made.",
+    highlights: ["Hand-knitted in Hackney","British wool only","Lifetime repairs"],
     followerCount: 2331,
     tags: ["knitwear", "handmade", "slow fashion", "artisan"],
   },
@@ -243,6 +300,10 @@ export const SEED_SHOPS: Shop[] = [
       "https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=800&q=80",
     socialHandle: "@camdencult",
     email: "camdencult@market.com",
+    founded: 2009,
+    story:
+      "Born from a Camden Lock stall, Camden Cult preserves the subcultural history of the market — punk, goth, grunge, Y2K. Items are sourced from the original wearers and dated to the decade they were first worn.",
+    highlights: ["Subculture archive","Camden Lock origins","Original-wearer sourced"],
     followerCount: 5588,
     tags: ["punk", "goth", "grunge", "80s", "Y2K"],
   },
@@ -257,6 +318,10 @@ export const SEED_SHOPS: Shop[] = [
       "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=800&q=80",
     socialHandle: "@nottinghilledit",
     email: "hello@nottinghilledit.co.uk",
+    founded: 2015,
+    story:
+      "A husband-and-wife edit of new and pre-loved investment pieces, run from a small Notting Hill studio. Every pre-loved item is steamed, condition-graded and photographed against the same neutral backdrop.",
+    highlights: ["Husband-wife studio","Condition-graded","Investment pieces only"],
     followerCount: 9134,
     tags: ["luxury", "timeless", "investment pieces", "Notting Hill"],
   },
@@ -271,6 +336,10 @@ export const SEED_SHOPS: Shop[] = [
       "https://images.unsplash.com/photo-1509631179647-0177331693ae?w=800&q=80",
     socialHandle: "@dalstondreams",
     email: "dreams@dalston.co.uk",
+    founded: 2014,
+    story:
+      "Run by stylist-turned-buyer Femi Adesina, Dalston Dreams sources eclectic 70s–90s rarities from estate sales, charity warehouses and trips to Lagos. Loud prints, bold colour, nothing predictable.",
+    highlights: ["Stylist-curated","Lagos x London sourcing","Loud-print specialist"],
     followerCount: 4456,
     tags: ["70s", "80s", "90s", "eclectic", "rarities"],
   },
