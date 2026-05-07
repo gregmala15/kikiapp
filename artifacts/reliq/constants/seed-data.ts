@@ -1696,3 +1696,101 @@ export function getHiddenGemProducts(): Product[] {
   const hiddenGemShopIds = getHiddenGemShops().map((s) => s.id);
   return SEED_PRODUCTS.filter((p) => hiddenGemShopIds.includes(p.shopId));
 }
+
+// ───────────────────────── Reviews ─────────────────────────
+// Buyer-verified shop reviews. In the live app a user can only post a
+// review for a shop they've placed an order with; the AppContext gates
+// addReview with hasPurchasedFromShop. SEED_REVIEWS represents historical
+// buyers whose orders aren't stored in this build's local AsyncStorage.
+export interface Review {
+  id: string;
+  shopId: string;
+  userId: string;
+  userName: string;
+  rating: number; // 1-5
+  body: string;
+  createdAt: string; // ISO
+  productId?: string;
+  productTitle?: string;
+}
+
+export const SEED_REVIEWS: Review[] = [
+  // Mercato Antico (shop-rome-1)
+  { id: "rev-1", shopId: "shop-rome-1", userId: "user-luca", userName: "Luca Marchetti", rating: 5,
+    body: "Marco messaged me before shipping to confirm sizing — the trench fits perfectly. Properly steamed and packed in tissue. Worth the wait.",
+    createdAt: "2026-04-12T14:30:00Z", productId: "prod-003", productTitle: "1970s Leather Trench Coat" },
+  { id: "rev-2", shopId: "shop-rome-1", userId: "user-aria", userName: "Aria Solano", rating: 5,
+    body: "The Florentine scarf is even better in person. You can tell each piece is hand-picked.",
+    createdAt: "2026-03-28T09:15:00Z", productId: "prod-001", productTitle: "1960s Florentine Silk Scarf" },
+  { id: "rev-3", shopId: "shop-rome-1", userId: "user-mira", userName: "Mira Tanaka", rating: 4,
+    body: "Beautiful piece, shipping took a bit longer than expected but the repair work on the lining is impeccable.",
+    createdAt: "2026-02-14T18:00:00Z" },
+
+  // Studio Rossi (shop-rome-2)
+  { id: "rev-4", shopId: "shop-rome-2", userId: "user-effie", userName: "Effie Kerr", rating: 5,
+    body: "Chiara replied to every fitting question within hours. The slip dress drapes like nothing else I own.",
+    createdAt: "2026-04-05T11:45:00Z", productId: "prod-006", productTitle: "Como Silk Slip Dress" },
+  { id: "rev-5", shopId: "shop-rome-2", userId: "user-noah", userName: "Noah Wells", rating: 5,
+    body: "Cashmere turtleneck is the real thing — substantial but not heavy. Made-to-order really shows.",
+    createdAt: "2026-03-19T16:20:00Z", productId: "prod-007", productTitle: "Cashmere Turtleneck" },
+
+  // Pietra Dura (shop-rome-5) — leather artisan
+  { id: "rev-6", shopId: "shop-rome-5", userId: "user-luca", userName: "Luca Marchetti", rating: 5,
+    body: "Got my belt resized for free six months after buying. Giorgio remembered the order. This is what artisan means.",
+    createdAt: "2026-04-22T10:00:00Z" },
+  { id: "rev-7", shopId: "shop-rome-5", userId: "user-aria", userName: "Aria Solano", rating: 5,
+    body: "Vegetable-tanned leather smells incredible and has aged beautifully in the year I've had it.",
+    createdAt: "2026-01-30T13:10:00Z" },
+  { id: "rev-8", shopId: "shop-rome-5", userId: "user-effie", userName: "Effie Kerr", rating: 4,
+    body: "Bag is gorgeous. Lead time was three weeks which felt long but Giorgio kept me posted.",
+    createdAt: "2025-12-08T20:00:00Z" },
+
+  // Portobello Archive (shop-london-1)
+  { id: "rev-9", shopId: "shop-london-1", userId: "user-mira", userName: "Mira Tanaka", rating: 5,
+    body: "Came with the original 1971 receipt tucked into the pocket. Wild. Properly sourced.",
+    createdAt: "2026-04-18T08:50:00Z" },
+  { id: "rev-10", shopId: "shop-london-1", userId: "user-noah", userName: "Noah Wells", rating: 5,
+    body: "Best vintage I've bought online. Condition notes were spot on, no surprises.",
+    createdAt: "2026-03-02T14:00:00Z" },
+  { id: "rev-11", shopId: "shop-london-1", userId: "user-effie", userName: "Effie Kerr", rating: 4,
+    body: "Loved the piece — packaging could use less plastic though.",
+    createdAt: "2026-02-21T09:30:00Z" },
+
+  // East End Collective (shop-london-2)
+  { id: "rev-12", shopId: "shop-london-2", userId: "user-noah", userName: "Noah Wells", rating: 5,
+    body: "Made it into the latest drop and the fit is exactly as described. Watch the release alerts, they sell out fast.",
+    createdAt: "2026-04-14T19:00:00Z" },
+  { id: "rev-13", shopId: "shop-london-2", userId: "user-mira", userName: "Mira Tanaka", rating: 4,
+    body: "Bold print, sturdy stitching. Wish more sizes were available but I get the small-batch thing.",
+    createdAt: "2026-03-25T12:00:00Z" },
+
+  // Hackney Hands (shop-london-5)
+  { id: "rev-14", shopId: "shop-london-5", userId: "user-effie", userName: "Effie Kerr", rating: 5,
+    body: "Aiko knit my jumper to a specific length and threw in repair instructions. Genuinely made-with-love energy.",
+    createdAt: "2026-04-08T15:00:00Z" },
+  { id: "rev-15", shopId: "shop-london-5", userId: "user-aria", userName: "Aria Solano", rating: 5,
+    body: "British wool is so different from generic merino. Worth every penny and will outlast everything I own.",
+    createdAt: "2026-03-11T10:30:00Z" },
+  { id: "rev-16", shopId: "shop-london-5", userId: "user-luca", userName: "Luca Marchetti", rating: 5,
+    body: "Hand-woven scarf, no two are the same. Got compliments at the office in Milan.",
+    createdAt: "2026-02-02T17:45:00Z" },
+];
+
+export function getReviewsForShop(
+  shopId: string,
+  extra: Review[] = [],
+): Review[] {
+  return [...SEED_REVIEWS, ...extra]
+    .filter((r) => r.shopId === shopId)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
+export function getShopRatingSummary(
+  shopId: string,
+  extra: Review[] = [],
+): { avg: number; count: number } {
+  const list = [...SEED_REVIEWS, ...extra].filter((r) => r.shopId === shopId);
+  if (list.length === 0) return { avg: 0, count: 0 };
+  const sum = list.reduce((acc, r) => acc + r.rating, 0);
+  return { avg: sum / list.length, count: list.length };
+}

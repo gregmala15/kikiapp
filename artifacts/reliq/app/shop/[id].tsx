@@ -18,6 +18,8 @@ import Colors from "@/constants/colors";
 import {
   SEED_SHOPS,
   getProductsByShop,
+  getReviewsForShop,
+  getShopRatingSummary,
 } from "@/constants/seed-data";
 import { useAppContext } from "@/contexts/AppContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -37,6 +39,9 @@ export default function ShopProfileScreen() {
     addToCart,
     sendMessage,
     showSaveToast,
+    reviews,
+    hasPurchasedFromShop,
+    hasReviewedShop,
   } = useAppContext();
 
   const shop = SEED_SHOPS.find((s) => s.id === id);
@@ -45,6 +50,17 @@ export default function ShopProfileScreen() {
     [shop?.id]
   );
   const following = shop ? isFollowingShop(shop.id) : false;
+  const shopReviews = useMemo(
+    () => (shop ? getReviewsForShop(shop.id, reviews) : []),
+    [shop?.id, reviews],
+  );
+  const rating = useMemo(
+    () =>
+      shop ? getShopRatingSummary(shop.id, reviews) : { avg: 0, count: 0 },
+    [shop?.id, reviews],
+  );
+  const canReview = shop ? hasPurchasedFromShop(shop.id) : false;
+  const alreadyReviewed = shop ? hasReviewedShop(shop.id) : false;
 
   if (!shop) {
     return (
@@ -120,9 +136,19 @@ export default function ShopProfileScreen() {
               </View>
             </View>
             <Text style={styles.shopName}>{shop.name}</Text>
-            <Text style={styles.followers}>
-              {shop.followerCount.toLocaleString()} followers
-            </Text>
+            <View style={styles.heroMetaRow}>
+              <Text style={styles.followers}>
+                {shop.followerCount.toLocaleString()} followers
+              </Text>
+              {rating.count > 0 && (
+                <View style={styles.heroRating}>
+                  <Ionicons name="star" size={12} color={Colors.accent} />
+                  <Text style={styles.heroRatingText}>
+                    {rating.avg.toFixed(1)} · {rating.count}
+                  </Text>
+                </View>
+              )}
+            </View>
           </View>
         </View>
 
@@ -255,6 +281,79 @@ export default function ShopProfileScreen() {
                 </Pressable>
               );
             })}
+          </View>
+
+          <View style={styles.reviewsSection}>
+            <View style={styles.reviewsHeaderRow}>
+              <Text style={styles.reviewsTitle}>Reviews</Text>
+              {rating.count > 0 && (
+                <View style={styles.reviewsSummary}>
+                  <Ionicons name="star" size={14} color={Colors.accent} />
+                  <Text style={styles.reviewsSummaryText}>
+                    {rating.avg.toFixed(1)}
+                  </Text>
+                  <Text style={styles.reviewsCount}>({rating.count})</Text>
+                </View>
+              )}
+            </View>
+
+            {shopReviews.length === 0 ? (
+              <Text style={styles.reviewsEmpty}>
+                No reviews yet — be the first.
+              </Text>
+            ) : (
+              <View style={styles.reviewsList}>
+                {shopReviews.slice(0, 3).map((r) => (
+                  <View key={r.id} style={styles.reviewCard}>
+                    <View style={styles.reviewHead}>
+                      <View style={styles.reviewStars}>
+                        {[1, 2, 3, 4, 5].map((n) => (
+                          <Ionicons
+                            key={n}
+                            name={n <= r.rating ? "star" : "star-outline"}
+                            size={12}
+                            color={Colors.accent}
+                          />
+                        ))}
+                      </View>
+                      <Text style={styles.reviewAuthor}>{r.userName}</Text>
+                    </View>
+                    <Text style={styles.reviewProduct}>
+                      Verified buyer
+                      {r.productTitle ? ` · ${r.productTitle}` : ""}
+                    </Text>
+                    {r.body.length > 0 && (
+                      <Text style={styles.reviewBody}>{r.body}</Text>
+                    )}
+                  </View>
+                ))}
+              </View>
+            )}
+
+            {alreadyReviewed ? (
+              <View style={styles.reviewCta}>
+                <Feather name="check" size={14} color={Colors.success} />
+                <Text style={styles.reviewCtaTextMuted}>
+                  You reviewed this shop
+                </Text>
+              </View>
+            ) : canReview ? (
+              <Pressable
+                style={styles.reviewBtn}
+                onPress={() => router.push(`/review/${shop.id}`)}
+                testID="shop-write-review"
+              >
+                <Feather name="edit-3" size={14} color="#fff" />
+                <Text style={styles.reviewBtnText}>Write a review</Text>
+              </Pressable>
+            ) : (
+              <View style={styles.reviewCta}>
+                <Feather name="lock" size={13} color={Colors.textTertiary} />
+                <Text style={styles.reviewCtaTextMuted}>
+                  Buy something from this shop to leave a review
+                </Text>
+              </View>
+            )}
           </View>
         </View>
       </ScrollView>
@@ -422,6 +521,132 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_500Medium",
     fontSize: 12,
     color: Colors.accentDark,
+  },
+  heroMetaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    flexWrap: "wrap",
+  },
+  heroRating: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    borderRadius: 4,
+  },
+  heroRatingText: {
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 11,
+    color: "#fff",
+  },
+  reviewsSection: {
+    marginTop: 8,
+    paddingTop: 18,
+    borderTopWidth: 1,
+    borderColor: Colors.border,
+    gap: 14,
+  },
+  reviewsHeaderRow: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    justifyContent: "space-between",
+  },
+  reviewsTitle: {
+    fontFamily: "PlayfairDisplay_700Bold",
+    fontSize: 22,
+    color: Colors.text,
+    letterSpacing: -0.3,
+  },
+  reviewsSummary: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  reviewsSummaryText: {
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 14,
+    color: Colors.text,
+  },
+  reviewsCount: {
+    fontFamily: "Inter_400Regular",
+    fontSize: 13,
+    color: Colors.textTertiary,
+  },
+  reviewsEmpty: {
+    fontFamily: "Inter_400Regular",
+    fontSize: 13,
+    color: Colors.textTertiary,
+    fontStyle: "italic",
+  },
+  reviewsList: {
+    gap: 14,
+  },
+  reviewCard: {
+    padding: 14,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 10,
+    gap: 6,
+  },
+  reviewHead: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  reviewStars: {
+    flexDirection: "row",
+    gap: 2,
+  },
+  reviewAuthor: {
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 13,
+    color: Colors.text,
+  },
+  reviewProduct: {
+    fontFamily: "Inter_500Medium",
+    fontSize: 11,
+    color: Colors.accentDark,
+    letterSpacing: 0.3,
+  },
+  reviewBody: {
+    fontFamily: "Inter_400Regular",
+    fontSize: 13,
+    color: Colors.textSecondary,
+    lineHeight: 19,
+    marginTop: 2,
+  },
+  reviewBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: Colors.text,
+    paddingVertical: 12,
+    borderRadius: 6,
+  },
+  reviewBtnText: {
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 13,
+    color: "#fff",
+  },
+  reviewCta: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    backgroundColor: Colors.card,
+    borderRadius: 6,
+  },
+  reviewCtaTextMuted: {
+    flex: 1,
+    fontFamily: "Inter_400Regular",
+    fontSize: 13,
+    color: Colors.textSecondary,
   },
   social: {
     flexDirection: "row",

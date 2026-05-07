@@ -9,7 +9,7 @@ import React, {
 } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "./AuthContext";
-import { Product, Shop } from "@/constants/seed-data";
+import { Product, Shop, Review } from "@/constants/seed-data";
 
 interface CartItem {
   product: Product;
@@ -190,6 +190,19 @@ interface AppContextValue {
   }) => Promise<string>;
   getConversationMessages: (conversationId: string) => Message[];
   getOrComputeConvId: (otherId: string) => string;
+  // Buyer-verified shop reviews. addReview is gated by hasPurchasedFromShop
+  // and refuses duplicates per (user, shop) pair, so the UI only ever needs
+  // to read the booleans rather than re-validate.
+  reviews: Review[];
+  addReview: (input: {
+    shopId: string;
+    rating: number;
+    body: string;
+    productId?: string;
+    productTitle?: string;
+  }) => Promise<void>;
+  hasPurchasedFromShop: (shopId: string) => boolean;
+  hasReviewedShop: (shopId: string) => boolean;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -207,6 +220,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [styleInfluences, setStyleInfluences] = useState<StyleInfluence[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [userShop, setUserShop] = useState<UserShop | null>(null);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -238,6 +252,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setStyleInfluences([]);
       setCart([]);
       setOrders([]);
+      setReviews([]);
       setUserShop(null);
       commitConversations([]);
       commitMessages([]);
@@ -246,7 +261,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   async function loadAll(userId: string) {
     try {
-      const [saved, collectionsData, shops, users, influences, cartData, ordersData, shopData, convsData, msgsData] =
+      const [saved, collectionsData, shops, users, influences, cartData, ordersData, shopData, convsData, msgsData, reviewsData] =
         await Promise.all([
           AsyncStorage.getItem(getKey("saved", userId)),
           AsyncStorage.getItem(getKey("collections", userId)),
@@ -258,6 +273,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           AsyncStorage.getItem(getKey("user_shop", userId)),
           AsyncStorage.getItem(getKey("conversations", userId)),
           AsyncStorage.getItem(getKey("messages", userId)),
+          AsyncStorage.getItem(getKey("reviews", userId)),
         ]);
       // Always overwrite state with the loaded value (or a default when the
       // key is missing). This prevents cross-account contamination when
@@ -398,6 +414,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setStyleInfluences(Array.from(byPair.values()).map((v) => v.row));
       setCart(cartData ? JSON.parse(cartData) : []);
       setOrders(ordersData ? JSON.parse(ordersData) : []);
+      setReviews(reviewsData ? JSON.parse(reviewsData) : []);
       setUserShop(shopData ? JSON.parse(shopData) : null);
       commitConversations(convsData ? JSON.parse(convsData) : []);
       commitMessages(msgsData ? JSON.parse(msgsData) : []);
@@ -773,6 +790,52 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  function hasPurchasedFromShop(shopId: string): boolean {
+    // Cart can mix items from multiple shops; check at the item level so this
+    // is correct now and remains correct if placeOrder is later split per-shop.
+    return orders.some((o) =>
+      o.items.some((it) => it.product.shopId === shopId),
+    );
+  }
+
+  function hasReviewedShop(shopId: string): boolean {
+    if (!user) return false;
+    return reviews.some((r) => r.shopId === shopId && r.userId === user.id);
+  }
+
+  async function addReview(input: {
+    shopId: string;
+    rating: number;
+    body: string;
+    productId?: string;
+    productTitle?: string;
+  }) {
+    if (!user) throw new Error("Not logged in");
+    if (input.rating < 1 || input.rating > 5) {
+      throw new Error("Rating must be between 1 and 5");
+    }
+    if (!hasPurchasedFromShop(input.shopId)) {
+      throw new Error("You can only review shops you've bought from");
+    }
+    if (hasReviewedShop(input.shopId)) {
+      throw new Error("You've already reviewed this shop");
+    }
+    const review: Review = {
+      id: `review-${Date.now()}`,
+      shopId: input.shopId,
+      userId: user.id,
+      userName: user.username,
+      rating: input.rating,
+      body: input.body.trim(),
+      createdAt: new Date().toISOString(),
+      productId: input.productId,
+      productTitle: input.productTitle,
+    };
+    const next = [review, ...reviews];
+    setReviews(next);
+    await persist("reviews", next);
+  }
+
   function getOrComputeConvId(otherId: string): string {
     if (!user) return "";
     return [user.id, otherId].sort().join("_");
@@ -914,6 +977,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         sendMessage,
         getConversationMessages,
         getOrComputeConvId,
+        reviews,
+        addReview,
+        hasPurchasedFromShop,
+        hasReviewedShop,
       }}
     >
       {children}

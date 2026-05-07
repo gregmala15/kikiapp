@@ -88,6 +88,10 @@ function RootLayoutNav() {
         name="save-to-collection"
         options={{ headerShown: false, presentation: "modal" }}
       />
+      <Stack.Screen
+        name="review/[shopId]"
+        options={{ headerShown: false, presentation: "modal" }}
+      />
     </Stack>
   );
 }
