@@ -179,7 +179,7 @@ export default function ShopProfileScreen() {
 
           <View style={styles.aboutSection}>
             <View style={styles.aboutHeaderRow}>
-              <Text style={styles.aboutTitle}>Our Story</Text>
+              <Text style={styles.aboutTitle}>About</Text>
               {shop.founded !== undefined && (
                 <Text style={styles.aboutMeta}>
                   Est. {shop.founded} · {shop.city}
