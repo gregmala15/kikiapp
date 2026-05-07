@@ -20,6 +20,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { SaveToast } from "@/components/SaveToast";
+import { CartToast } from "@/components/CartToast";
 import { queryClient } from "@/lib/query-client";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { AppProvider } from "@/contexts/AppContext";
@@ -132,6 +133,7 @@ export default function RootLayout() {
               <GestureHandlerRootView style={{ flex: 1 }}>
                 <RootLayoutNav />
                 <SaveToast />
+                <CartToast />
               </GestureHandlerRootView>
             </AppProvider>
           </AuthProvider>

@@ -132,6 +132,10 @@ interface AppContextValue {
   saveToast: { productId: string; key: number } | null;
   showSaveToast: (productId: string) => void;
   hideSaveToast: () => void;
+  // Transient "Added to bag" in-app toast. Replaces the native Alert.
+  cartToast: { title: string; imageUrl?: string; key: number } | null;
+  showCartToast: (title: string, imageUrl?: string) => void;
+  hideCartToast: () => void;
   collections: Collection[];
   createCollection: (name: string, initialProductId?: string) => Collection;
   renameCollection: (collectionId: string, name: string) => void;
@@ -466,6 +470,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }
   function hideSaveToast() {
     setSaveToast(null);
+  }
+
+  const [cartToast, setCartToast] = useState<
+    { title: string; imageUrl?: string; key: number } | null
+  >(null);
+  function showCartToast(title: string, imageUrl?: string) {
+    setCartToast({ title, imageUrl, key: Date.now() });
+  }
+  function hideCartToast() {
+    setCartToast(null);
   }
 
   function createCollection(name: string, initialProductId?: string): Collection {
@@ -939,6 +953,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         saveToast,
         showSaveToast,
         hideSaveToast,
+        cartToast,
+        showCartToast,
+        hideCartToast,
         collections,
         createCollection,
         renameCollection,

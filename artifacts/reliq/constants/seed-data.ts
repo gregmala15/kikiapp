@@ -960,7 +960,7 @@ export const SEED_PRODUCTS: Product[] = [
     condition: "New with tags",
     era: "Contemporary",
     imageUrl:
-      "https://images.unsplash.com/photo-1556821840-3a63f15732ce?w=800&q=80",
+      "https://images.unsplash.com/photo-1772311993942-872095c6a227?w=800&q=80",
     quantity: 20,
     tags: ["hoodie", "graphic", "streetwear", "East London"],
   },
@@ -976,7 +976,7 @@ export const SEED_PRODUCTS: Product[] = [
     condition: "New with tags",
     era: "Contemporary",
     imageUrl:
-      "https://images.unsplash.com/photo-1551854838-212c9e876c88?w=800&q=80",
+      "https://images.unsplash.com/photo-1632682582909-2b3a2581eef7?w=800&q=80",
     quantity: 3,
     tags: ["denim", "wide-leg", "deadstock", "indigo"],
   },
@@ -1166,7 +1166,7 @@ export const SEED_PRODUCTS: Product[] = [
     condition: "New with tags",
     era: "Contemporary",
     imageUrl:
-      "https://images.unsplash.com/photo-1524535359-1a5498c4fa29?w=800&q=80",
+      "https://images.unsplash.com/photo-1606760227091-3dd870d97f1d?w=800&q=80",
     quantity: 8,
     tags: ["linen", "woven", "scarf", "natural"],
   },
@@ -1217,7 +1217,7 @@ export const SEED_PRODUCTS: Product[] = [
     condition: "Very Good",
     era: "1990s",
     imageUrl:
-      "https://images.unsplash.com/photo-1548078245-9a1c71d8b3a6?w=800&q=80",
+      "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800&q=80",
     quantity: 1,
     isVintage: true,
     tags: ["creepers", "platform", "goth", "90s"],
@@ -1234,7 +1234,7 @@ export const SEED_PRODUCTS: Product[] = [
     condition: "Good",
     era: "1990s",
     imageUrl:
-      "https://images.unsplash.com/photo-1522937955-6226b8a3ef9d?w=800&q=80",
+      "https://images.unsplash.com/photo-1629956356549-63b8a150c8ba?w=800&q=80",
     quantity: 1,
     isVintage: true,
     tags: ["band tee", "90s", "metal", "vintage"],
@@ -1251,7 +1251,7 @@ export const SEED_PRODUCTS: Product[] = [
     condition: "Very Good",
     era: "2000s",
     imageUrl:
-      "https://images.unsplash.com/photo-1471286174890-9c112c592d32?w=800&q=80",
+      "https://images.unsplash.com/photo-1729379913152-bf10f56a38b9?w=800&q=80",
     quantity: 1,
     isVintage: true,
     tags: ["Y2K", "vinyl", "mini skirt", "2000s"],
@@ -1336,7 +1336,7 @@ export const SEED_PRODUCTS: Product[] = [
     condition: "Very Good",
     era: "1970s",
     imageUrl:
-      "https://images.unsplash.com/photo-1468657988500-4c890f44b82b?w=800&q=80",
+      "https://images.unsplash.com/photo-1722112935257-2ecc1d12b394?w=800&q=80",
     quantity: 1,
     isVintage: true,
     tags: ["disco", "70s", "metallic", "jumpsuit"],
