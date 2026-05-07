@@ -199,17 +199,18 @@ export default function SocialScreen() {
     );
   }
 
-  // Discover row — same avatar/name/sub layout as renderUserRow but with
-  // a Follow / Following toggle button on the right instead of a chevron.
-  // Tapping the row body still navigates to the profile; the button
-  // stops propagation so following doesn't double-fire.
-  function renderDiscoverRow(u: CommunityUser) {
+  // User row with a Follow / Following toggle button on the right
+  // instead of a chevron. Used by both Discover (where rows start as
+  // "Follow") and Following (where every row starts as "Following" and
+  // tapping unfollows). Tapping the row body navigates to the profile;
+  // the button stops propagation so following doesn't double-fire.
+  function renderFollowableRow(u: CommunityUser, testIdPrefix: string) {
     const following = isFollowingUser(u.id);
     return (
       <Pressable
         style={styles.userRow}
         onPress={() => router.push(`/user/${u.id}`)}
-        testID={`discover-user-${u.id}`}
+        testID={`${testIdPrefix}-user-${u.id}`}
       >
         <Image source={{ uri: u.avatarUrl }} style={styles.userAvatar} />
         <View style={styles.userInfo}>
@@ -234,7 +235,7 @@ export default function SocialScreen() {
             e.stopPropagation();
             toggleFollowUser(u.id);
           }}
-          testID={`discover-follow-${u.id}`}
+          testID={`${testIdPrefix}-follow-${u.id}`}
           accessibilityRole="button"
           accessibilityLabel={following ? "Unfollow" : "Follow"}
         >
@@ -317,7 +318,7 @@ export default function SocialScreen() {
         <FlatList
           data={discoverUsers}
           keyExtractor={(u) => u.id}
-          renderItem={({ item }) => renderDiscoverRow(item)}
+          renderItem={({ item }) => renderFollowableRow(item, "discover")}
           ItemSeparatorComponent={() => <View style={styles.sep} />}
           ListHeaderComponent={
             <View style={styles.discoverHeader}>
@@ -351,7 +352,7 @@ export default function SocialScreen() {
         <FlatList
           data={followingUsers}
           keyExtractor={(u) => u.id}
-          renderItem={({ item }) => renderUserRow(item)}
+          renderItem={({ item }) => renderFollowableRow(item, "following")}
           ItemSeparatorComponent={() => <View style={styles.sep} />}
           ListEmptyComponent={
             <View style={styles.empty}>
