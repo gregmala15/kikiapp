@@ -32,7 +32,16 @@ export default function AccountTypeScreen() {
     setLoading(true);
     try {
       await register(params.username, params.email, params.password, selected);
-      router.replace("/(tabs)");
+      // Shoppers always see the intro slideshow on signup so we can
+      // showcase what makes Reliq different (verified shops, hidden
+      // gems, style influences, recommendations) before they land in
+      // the feed. Shop accounts skip it — they go straight to setting
+      // up their store.
+      if (selected === "user") {
+        router.replace("/onboarding");
+      } else {
+        router.replace("/(tabs)");
+      }
     } catch (e: any) {
       Alert.alert("Registration failed", e.message);
     } finally {
