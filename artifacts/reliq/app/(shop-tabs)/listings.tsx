@@ -101,7 +101,7 @@ export default function ListingsScreen() {
             <Pressable
               key={p.id}
               style={styles.row}
-              onPress={() => router.push(`/product/${p.id}` as any)}
+              onPress={() => router.push({ pathname: "/product/[id]", params: { id: p.id } })}
             >
               <Image
                 source={p.imageUrl}

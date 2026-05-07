@@ -13,7 +13,9 @@ import { Feather, Ionicons } from "@expo/vector-icons";
 import Colors from "@/constants/colors";
 import { useAppContext, Order } from "@/contexts/AppContext";
 
-const STATUS_CONFIG: Record<Order["status"], { color: string; label: string; icon: string }> = {
+type FeatherIconName = React.ComponentProps<typeof Feather>["name"];
+
+const STATUS_CONFIG: Record<Order["status"], { color: string; label: string; icon: FeatherIconName }> = {
   created: { color: Colors.textSecondary, label: "Order Created", icon: "check-circle" },
   label_created: { color: Colors.accent, label: "Label Created", icon: "printer" },
   shipped: { color: "#2196F3", label: "Shipped", icon: "truck" },
@@ -64,7 +66,7 @@ export default function OrdersScreen() {
                   <Text style={styles.orderDate}>{formatDate(order.createdAt)}</Text>
                 </View>
                 <View style={[styles.statusBadge, { backgroundColor: config.color + "20" }]}>
-                  <Feather name={config.icon as any} size={12} color={config.color} />
+                  <Feather name={config.icon} size={12} color={config.color} />
                   <Text style={[styles.statusText, { color: config.color }]}>
                     {config.label}
                   </Text>
