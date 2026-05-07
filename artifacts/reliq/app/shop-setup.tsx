@@ -17,20 +17,22 @@ import Colors from "@/constants/colors";
 import { useAppContext } from "@/contexts/AppContext";
 import { useAuth } from "@/contexts/AuthContext";
 
-type ShopType = "independent" | "vintage";
-
+// Reliq is curated to vintage shops only — the platform's editorial
+// positioning is built around verified, physical vintage stores. The
+// independent-brand path was removed from the UI; the underlying union
+// type still includes "independent" because seeded demo shops in
+// constants/seed-data.ts use it. User-created shops are always
+// { type: "vintage", isPhysical: true } and must provide an address.
 export default function ShopSetupScreen() {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const { createShop, userShop } = useAppContext();
 
   const [name, setName] = useState(userShop?.name ?? "");
-  const [type, setType] = useState<ShopType>(userShop?.type ?? "independent");
   const [description, setDescription] = useState(userShop?.description ?? "");
   const [city, setCity] = useState(userShop?.city ?? "");
   const [socialHandle, setSocialHandle] = useState(userShop?.socialHandle ?? "@");
   const [email, setEmail] = useState(userShop?.email ?? user?.email ?? "");
-  const [isPhysical, setIsPhysical] = useState(userShop?.isPhysical ?? false);
   const [address, setAddress] = useState(userShop?.address ?? "");
   const [loading, setLoading] = useState(false);
 
@@ -38,8 +40,17 @@ export default function ShopSetupScreen() {
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom;
 
   async function handleSave() {
-    if (!name.trim() || !description.trim() || !city.trim() || !email.trim()) {
-      Alert.alert("Missing fields", "Please fill in all required fields.");
+    if (
+      !name.trim() ||
+      !description.trim() ||
+      !city.trim() ||
+      !email.trim() ||
+      !address.trim()
+    ) {
+      Alert.alert(
+        "Missing fields",
+        "Please fill in all required fields, including your storefront address.",
+      );
       return;
     }
     // Capture the create-vs-edit distinction before the save flips state,
@@ -50,12 +61,12 @@ export default function ShopSetupScreen() {
     try {
       await createShop({
         name: name.trim(),
-        type,
+        type: "vintage",
         description: description.trim(),
         city: city.trim(),
         socialHandle: socialHandle.trim(),
         email: email.trim(),
-        isPhysical,
+        isPhysical: true,
         address: address.trim(),
       });
       if (wasCreating) {
@@ -118,46 +129,18 @@ export default function ShopSetupScreen() {
           />
         </View>
 
+        {/* Type is fixed to "vintage" — Reliq only onboards vintage
+            stores. Render as a static badge so shop owners understand
+            why there's no choice rather than just hiding the field. */}
         <View style={styles.field}>
           <Text style={styles.fieldLabel}>Shop Type</Text>
-          <View style={styles.typeRow}>
-            <Pressable
-              style={[styles.typeBtn, type === "independent" && styles.typeBtnActive]}
-              onPress={() => setType("independent")}
-            >
-              <Feather
-                name="shopping-bag"
-                size={16}
-                color={type === "independent" ? "#fff" : Colors.textSecondary}
-              />
-              <Text
-                style={[
-                  styles.typeBtnText,
-                  type === "independent" && styles.typeBtnTextActive,
-                ]}
-              >
-                Independent Brand
-              </Text>
-            </Pressable>
-            <Pressable
-              style={[styles.typeBtn, type === "vintage" && styles.typeBtnActive]}
-              onPress={() => setType("vintage")}
-            >
-              <Feather
-                name="archive"
-                size={16}
-                color={type === "vintage" ? "#fff" : Colors.textSecondary}
-              />
-              <Text
-                style={[
-                  styles.typeBtnText,
-                  type === "vintage" && styles.typeBtnTextActive,
-                ]}
-              >
-                Vintage Shop
-              </Text>
-            </Pressable>
+          <View style={styles.typeBadge}>
+            <Feather name="archive" size={16} color={Colors.text} />
+            <Text style={styles.typeBadgeText}>Vintage Shop</Text>
           </View>
+          <Text style={styles.fieldHint}>
+            Reliq is curated to vintage stores only.
+          </Text>
         </View>
 
         <View style={styles.field}>
@@ -214,36 +197,27 @@ export default function ShopSetupScreen() {
         </View>
 
         <Text style={[styles.sectionLabel, { marginTop: 28 }]}>
-          Physical Location
+          Physical Storefront
         </Text>
 
-        <View style={styles.toggleRow}>
-          <Text style={styles.toggleLabel}>Physical storefront?</Text>
-          <Pressable
-            style={[styles.toggle, isPhysical && styles.toggleActive]}
-            onPress={() => setIsPhysical(!isPhysical)}
-          >
-            <View
-              style={[
-                styles.toggleThumb,
-                isPhysical && styles.toggleThumbActive,
-              ]}
-            />
-          </Pressable>
+        {/* Every Reliq shop is required to have a real, physical
+            storefront — it's part of how we keep the marketplace
+            authentic and verifiable. The toggle was removed so the
+            address is always required. */}
+        <View style={styles.field}>
+          <Text style={styles.fieldLabel}>Storefront Address *</Text>
+          <TextInput
+            style={styles.input}
+            value={address}
+            onChangeText={setAddress}
+            placeholder="123 Fashion Street"
+            placeholderTextColor={Colors.textTertiary}
+          />
+          <Text style={styles.fieldHint}>
+            All Reliq shops must operate from a verifiable physical
+            location.
+          </Text>
         </View>
-
-        {isPhysical && (
-          <View style={styles.field}>
-            <Text style={styles.fieldLabel}>Storefront Address</Text>
-            <TextInput
-              style={styles.input}
-              value={address}
-              onChangeText={setAddress}
-              placeholder="123 Fashion Street"
-              placeholderTextColor={Colors.textTertiary}
-            />
-          </View>
-        )}
       </ScrollView>
 
       <View
@@ -345,6 +319,31 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
   },
   typeBtnTextActive: { color: "#fff" },
+  typeBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    gap: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 8,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  typeBadgeText: {
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 13,
+    color: Colors.text,
+    letterSpacing: 0.4,
+  },
+  fieldHint: {
+    fontFamily: "Inter_400Regular",
+    fontSize: 12,
+    color: Colors.textTertiary,
+    marginTop: 6,
+    lineHeight: 17,
+  },
   toggleRow: {
     flexDirection: "row",
     alignItems: "center",

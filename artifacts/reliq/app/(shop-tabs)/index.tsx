@@ -88,10 +88,7 @@ export default function ShopHomeScreen() {
           {user?.username ? `, ${user.username}` : ""}
         </Text>
         <Text style={styles.shopName}>{userShop.name}</Text>
-        <Text style={styles.location}>
-          {userShop.city} ·{" "}
-          {userShop.type === "vintage" ? "Vintage" : "Independent"}
-        </Text>
+        <Text style={styles.location}>{userShop.city} · Vintage</Text>
       </View>
 
       <View style={styles.statsGrid}>

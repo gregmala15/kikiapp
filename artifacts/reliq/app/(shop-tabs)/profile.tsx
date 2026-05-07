@@ -74,12 +74,7 @@ export default function ShopProfileScreen() {
             {userShop.address ? (
               <Row icon="home" label={userShop.address} />
             ) : null}
-            <Row
-              icon="tag"
-              label={
-                userShop.type === "vintage" ? "Vintage" : "Independent"
-              }
-            />
+            <Row icon="tag" label="Vintage" />
           </Section>
         </>
       ) : (
