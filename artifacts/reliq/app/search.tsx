@@ -18,12 +18,15 @@ import Colors from "@/constants/colors";
 import {
   SEED_PRODUCTS,
   SEED_SHOPS,
+  SEED_USERS,
   Product,
   Shop,
+  CommunityUser,
   ProductCategory,
   getProductsByShop,
   getShopById,
 } from "@/constants/seed-data";
+import { useAuth } from "@/contexts/AuthContext";
 
 const CATEGORIES: ProductCategory[] = [
   "Outerwear",
@@ -42,10 +45,13 @@ const VERIFIED_THRESHOLD = 2500;
 interface SearchResults {
   products: Product[];
   shops: Shop[];
+  users: CommunityUser[];
   categories: string[];
   eras: string[];
   sizes: string[];
 }
+
+type SearchTab = "items" | "shops" | "people";
 
 function normalize(s: string): string {
   return s.toLowerCase().trim();
@@ -63,10 +69,17 @@ function matchesEra(era: string, q: string): boolean {
   return false;
 }
 
-function search(query: string): SearchResults {
+function search(query: string, currentUserId?: string): SearchResults {
   const q = normalize(query);
   if (!q) {
-    return { products: [], shops: [], categories: [], eras: [], sizes: [] };
+    return {
+      products: [],
+      shops: [],
+      users: [],
+      categories: [],
+      eras: [],
+      sizes: [],
+    };
   }
 
   const products = SEED_PRODUCTS.filter((p) => {
@@ -94,20 +107,32 @@ function search(query: string): SearchResults {
     return haystack.includes(q);
   }).slice(0, 20);
 
+  // Match across name / username / city / bio so users can be found by
+  // taste hints ("vintage", "Rome") not just exact names. Excludes self.
+  const users = SEED_USERS.filter((u) => {
+    if (currentUserId && u.id === currentUserId) return false;
+    const haystack = [u.fullName, u.username, u.city, u.bio]
+      .join(" ")
+      .toLowerCase();
+    return haystack.includes(q);
+  }).slice(0, 30);
+
   const categories = CATEGORIES.filter((c) => c.toLowerCase().includes(q));
   const eras = ERAS.filter((e) => matchesEra(e, q));
   const sizes = ["XS", "S", "M", "L", "XL", "One Size"].filter(
     (s) => s.toLowerCase() === q || s.toLowerCase().startsWith(q),
   );
 
-  return { products, shops, categories, eras, sizes };
+  return { products, shops, users, categories, eras, sizes };
 }
 
 export default function SearchScreen() {
   const insets = useSafeAreaInsets();
+  const { user: currentUser } = useAuth();
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [recent, setRecent] = useState<string[]>([]);
+  const [tab, setTab] = useState<SearchTab>("items");
   const topPad = Platform.OS === "web" ? 67 : insets.top;
 
   // Debounce input by 300ms
@@ -144,15 +169,24 @@ export default function SearchScreen() {
     await AsyncStorage.removeItem(RECENT_KEY);
   }, []);
 
-  const results = useMemo(() => search(debouncedQuery), [debouncedQuery]);
+  const results = useMemo(
+    () => search(debouncedQuery, currentUser?.id),
+    [debouncedQuery, currentUser?.id],
+  );
 
   const hasQuery = debouncedQuery.trim().length > 0;
   const hasResults =
     results.products.length > 0 ||
     results.shops.length > 0 ||
+    results.users.length > 0 ||
     results.categories.length > 0 ||
     results.eras.length > 0 ||
     results.sizes.length > 0;
+
+  function openUser(u: CommunityUser) {
+    saveRecent(debouncedQuery || u.fullName);
+    router.push(`/user/${u.id}`);
+  }
 
   function applyFilter(kind: "category" | "era" | "size", value: string) {
     Keyboard.dismiss();
@@ -211,6 +245,32 @@ export default function SearchScreen() {
           )}
         </View>
       </View>
+
+      {hasQuery && hasResults && (
+        <View style={[styles.tabBar, { borderBottomColor: Colors.border }]}>
+          {([
+            { key: "items", label: "Items", count: results.products.length },
+            { key: "shops", label: "Shops", count: results.shops.length },
+            { key: "people", label: "People", count: results.users.length },
+          ] as { key: SearchTab; label: string; count: number }[]).map((t) => {
+            const active = tab === t.key;
+            return (
+              <Pressable
+                key={t.key}
+                style={styles.tab}
+                onPress={() => setTab(t.key)}
+                testID={`search-tab-${t.key}`}
+              >
+                <Text style={[styles.tabLabel, active && styles.tabLabelActive]}>
+                  {t.label}
+                  {t.count > 0 ? ` · ${t.count}` : ""}
+                </Text>
+                {active && <View style={styles.tabUnderline} />}
+              </Pressable>
+            );
+          })}
+        </View>
+      )}
 
       <FlatList
         data={[1]}
@@ -314,8 +374,8 @@ export default function SearchScreen() {
               </View>
             )}
 
-            {/* FILTER QUICK CHIPS */}
-            {hasQuery &&
+            {/* FILTER QUICK CHIPS — only relevant on Items tab */}
+            {hasQuery && tab === "items" &&
               (results.categories.length > 0 ||
                 results.eras.length > 0 ||
                 results.sizes.length > 0) && (
@@ -357,7 +417,7 @@ export default function SearchScreen() {
               )}
 
             {/* PRODUCTS — compact rows */}
-            {hasQuery && results.products.length > 0 && (
+            {hasQuery && tab === "items" && results.products.length > 0 && (
               <View style={styles.section}>
                 <View style={styles.sectionHeaderRow}>
                   <Text style={styles.sectionLabel}>
@@ -403,8 +463,67 @@ export default function SearchScreen() {
               </View>
             )}
 
+            {/* PEOPLE */}
+            {hasQuery && tab === "people" && results.users.length > 0 && (
+              <View style={styles.section}>
+                <View style={styles.sectionHeaderRow}>
+                  <Text style={styles.sectionLabel}>
+                    People · {results.users.length}
+                  </Text>
+                </View>
+                <View style={styles.divider} />
+                {results.users.map((u, idx) => (
+                  <Pressable
+                    key={u.id}
+                    style={[
+                      styles.shopRow,
+                      idx < results.users.length - 1 && styles.rowBorder,
+                    ]}
+                    onPress={() => openUser(u)}
+                    testID={`search-user-${u.id}`}
+                  >
+                    <Image
+                      source={{ uri: u.avatarUrl }}
+                      style={styles.shopAvatar}
+                      contentFit="cover"
+                    />
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.shopName} numberOfLines={1}>
+                        {u.fullName}
+                      </Text>
+                      <Text style={styles.shopMeta} numberOfLines={1}>
+                        @{u.username} · {u.city}
+                      </Text>
+                    </View>
+                    <Feather
+                      name="chevron-right"
+                      size={18}
+                      color={Colors.textTertiary}
+                    />
+                  </Pressable>
+                ))}
+              </View>
+            )}
+
+            {/* PER-TAB EMPTY STATE — query has results overall but not on this tab */}
+            {hasQuery && hasResults && (
+              (tab === "items" && results.products.length === 0) ||
+              (tab === "shops" && results.shops.length === 0) ||
+              (tab === "people" && results.users.length === 0)
+            ) && (
+              <View style={styles.noResults}>
+                <Feather name="search" size={28} color={Colors.textTertiary} />
+                <Text style={styles.noResultsTitle}>
+                  No {tab === "items" ? "items" : tab === "shops" ? "shops" : "people"} match
+                </Text>
+                <Text style={styles.noResultsSub}>
+                  Try the other tabs or a different word
+                </Text>
+              </View>
+            )}
+
             {/* SHOPS */}
-            {hasQuery && results.shops.length > 0 && (
+            {hasQuery && tab === "shops" && results.shops.length > 0 && (
               <View style={styles.section}>
                 <View style={styles.sectionHeaderRow}>
                   <Text style={styles.sectionLabel}>
@@ -671,6 +790,34 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: Colors.textSecondary,
     marginTop: 2,
+  },
+  tabBar: {
+    flexDirection: "row",
+    paddingHorizontal: 8,
+    borderBottomWidth: 1,
+  },
+  tab: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    alignItems: "center",
+  },
+  tabLabel: {
+    fontFamily: "Inter_500Medium",
+    fontSize: 13,
+    color: Colors.textSecondary,
+    letterSpacing: 0.2,
+  },
+  tabLabelActive: {
+    fontFamily: "Inter_600SemiBold",
+    color: Colors.text,
+  },
+  tabUnderline: {
+    position: "absolute",
+    left: 12,
+    right: 12,
+    bottom: -1,
+    height: 2,
+    backgroundColor: Colors.text,
   },
   noResults: {
     alignItems: "center",
