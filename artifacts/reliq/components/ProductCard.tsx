@@ -24,7 +24,7 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product, shopName, style }: ProductCardProps) {
-  const { isSaved, toggleSaved } = useAppContext();
+  const { isSaved, toggleSaved, showSaveToast } = useAppContext();
   const saved = isSaved(product.id);
   const shop = getShopById(product.shopId);
   const displayShopName = shopName ?? shop?.name ?? "";
@@ -37,12 +37,7 @@ export function ProductCard({ product, shopName, style }: ProductCardProps) {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const wasSaved = saved;
     toggleSaved(product.id);
-    if (!wasSaved) {
-      router.push({
-        pathname: "/save-to-collection",
-        params: { productId: product.id },
-      });
-    }
+    if (!wasSaved) showSaveToast(product.id);
   }
 
   function handleRecommend(e?: { stopPropagation?: () => void }) {

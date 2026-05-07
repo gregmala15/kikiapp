@@ -36,6 +36,7 @@ export default function ShopProfileScreen() {
     toggleSaved,
     addToCart,
     sendMessage,
+    showSaveToast,
   } = useAppContext();
 
   const shop = SEED_SHOPS.find((s) => s.id === id);
@@ -205,12 +206,7 @@ export default function ShopProfileScreen() {
                         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                         const wasSaved = saved;
                         toggleSaved(product.id);
-                        if (!wasSaved) {
-                          router.push({
-                            pathname: "/save-to-collection",
-                            params: { productId: product.id },
-                          });
-                        }
+                        if (!wasSaved) showSaveToast(product.id);
                       }}
                     >
                       <Ionicons

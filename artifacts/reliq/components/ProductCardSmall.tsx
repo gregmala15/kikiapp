@@ -25,7 +25,7 @@ interface Props {
 }
 
 export function ProductCardSmall({ product }: Props) {
-  const { isSaved, toggleSaved } = useAppContext();
+  const { isSaved, toggleSaved, showSaveToast } = useAppContext();
   const saved = isSaved(product.id);
   const shop = getShopById(product.shopId);
   const isSold = product.isSold || product.quantity === 0;
@@ -58,12 +58,7 @@ export function ProductCardSmall({ product }: Props) {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             const wasSaved = saved;
             toggleSaved(product.id);
-            if (!wasSaved) {
-              router.push({
-                pathname: "/save-to-collection",
-                params: { productId: product.id },
-              });
-            }
+            if (!wasSaved) showSaveToast(product.id);
           }}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >

@@ -25,7 +25,7 @@ export default function ProductDetailScreen() {
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user } = useAuth();
-  const { isSaved, toggleSaved, addToCart, sendMessage, cartCount } = useAppContext();
+  const { isSaved, toggleSaved, addToCart, sendMessage, cartCount, showSaveToast } = useAppContext();
   const [messageText, setMessageText] = useState("");
 
   const product = SEED_PRODUCTS.find((p) => p.id === id);
@@ -49,15 +49,10 @@ export default function ProductDetailScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const wasSaved = saved;
     toggleSaved(product!.id);
-    // If we just saved (heart turned ON), open the collection picker so the
-    // user can immediately drop it into a named collection. Unsaving stays
-    // a single tap with no follow-up prompt.
-    if (!wasSaved) {
-      router.push({
-        pathname: "/save-to-collection",
-        params: { productId: product!.id },
-      });
-    }
+    // If we just saved (heart turned ON), surface the bottom toast that
+    // offers to add it to a named collection. Unsaving stays a single tap
+    // with no follow-up prompt.
+    if (!wasSaved) showSaveToast(product!.id);
   }
 
   function handleAddToCart() {

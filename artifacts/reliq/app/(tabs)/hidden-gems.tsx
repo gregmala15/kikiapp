@@ -41,7 +41,7 @@ const CATEGORIES: Array<"all" | ProductCategory> = [
 ];
 
 function FeaturedGem({ product }: { product: Product }) {
-  const { isSaved, toggleSaved } = useAppContext();
+  const { isSaved, toggleSaved, showSaveToast } = useAppContext();
   const saved = isSaved(product.id);
   const import_shop = product.shopId;
 
@@ -79,12 +79,7 @@ function FeaturedGem({ product }: { product: Product }) {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           const wasSaved = saved;
           toggleSaved(product.id);
-          if (!wasSaved) {
-            router.push({
-              pathname: "/save-to-collection",
-              params: { productId: product.id },
-            });
-          }
+          if (!wasSaved) showSaveToast(product.id);
         }}
       >
         <Ionicons

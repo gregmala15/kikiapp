@@ -126,6 +126,12 @@ interface AppContextValue {
   savedProductIds: string[];
   toggleSaved: (productId: string) => void;
   isSaved: (productId: string) => boolean;
+  // Transient "Item saved — tap to add to a collection" toast.
+  // null when the toast should be hidden. Set by save call sites
+  // (cards, product page) and consumed by the root <SaveToast />.
+  saveToast: { productId: string; key: number } | null;
+  showSaveToast: (productId: string) => void;
+  hideSaveToast: () => void;
   collections: Collection[];
   createCollection: (name: string, initialProductId?: string) => Collection;
   renameCollection: (collectionId: string, name: string) => void;
@@ -431,6 +437,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   function isSaved(productId: string) {
     return savedProductIds.includes(productId);
+  }
+
+  const [saveToast, setSaveToast] = useState<
+    { productId: string; key: number } | null
+  >(null);
+  function showSaveToast(productId: string) {
+    // `key` lets the toast component remount/restart its timer when the
+    // same productId is saved twice in a row (rare but possible).
+    setSaveToast({ productId, key: Date.now() });
+  }
+  function hideSaveToast() {
+    setSaveToast(null);
   }
 
   function createCollection(name: string, initialProductId?: string): Collection {
@@ -855,6 +873,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         savedProductIds,
         toggleSaved,
         isSaved,
+        saveToast,
+        showSaveToast,
+        hideSaveToast,
         collections,
         createCollection,
         renameCollection,
