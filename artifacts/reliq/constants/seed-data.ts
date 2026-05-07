@@ -527,7 +527,7 @@ export const SEED_PRODUCTS: Product[] = [
     condition: "Excellent",
     era: "1980s",
     imageUrl:
-      "https://images.unsplash.com/photo-1561713132-05b56b50e71b?w=800&q=80",
+      "https://images.unsplash.com/photo-1652385748879-cd7a0cdf466c?w=800&q=80",
     quantity: 1,
     isVintage: true,
     tags: ["Fendi", "silk", "scarf", "Zucca"],
@@ -666,7 +666,7 @@ export const SEED_PRODUCTS: Product[] = [
     condition: "New with tags",
     era: "Contemporary",
     imageUrl:
-      "https://images.unsplash.com/photo-1607522370275-f6bca8773bd2?w=800&q=80",
+      "https://images.unsplash.com/photo-1711443982852-b3df5c563448?w=800&q=80",
     quantity: 10,
     tags: ["belt", "leather", "woven", "cognac"],
   },
@@ -769,7 +769,7 @@ export const SEED_PRODUCTS: Product[] = [
     condition: "New with tags",
     era: "Contemporary",
     imageUrl:
-      "https://images.unsplash.com/photo-1508216310976-a9bfe3b96ba5?w=800&q=80",
+      "https://images.unsplash.com/photo-1761117228880-df2425bd70da?w=800&q=80",
     quantity: 4,
     tags: ["silk", "blouse", "open back", "ivory"],
   },
@@ -907,7 +907,7 @@ export const SEED_PRODUCTS: Product[] = [
     condition: "Very Good",
     era: "1960s",
     imageUrl:
-      "https://images.unsplash.com/photo-1509629927083-3dea35a25f88?w=800&q=80",
+      "https://images.unsplash.com/photo-1652227167355-c8b1ac264fb7?w=800&q=80",
     quantity: 1,
     isVintage: true,
     tags: ["psychedelic", "60s", "mini dress", "Carnaby"],
@@ -1097,7 +1097,7 @@ export const SEED_PRODUCTS: Product[] = [
     condition: "Excellent",
     era: "1970s",
     imageUrl:
-      "https://images.unsplash.com/photo-1485462537746-965f33f8f2db?w=800&q=80",
+      "https://images.unsplash.com/photo-1630579588100-af5d652c7e07?w=800&q=80",
     quantity: 1,
     isVintage: true,
     tags: ["maxi dress", "floral", "70s", "Liberty print"],
@@ -1131,7 +1131,7 @@ export const SEED_PRODUCTS: Product[] = [
     condition: "Good",
     era: "1970s",
     imageUrl:
-      "https://images.unsplash.com/photo-1509925586452-04eba7d6fd70?w=800&q=80",
+      "https://images.unsplash.com/photo-1635665808369-ac373379a5b4?w=800&q=80",
     quantity: 1,
     isVintage: true,
     tags: ["knee boots", "suede", "70s", "caramel"],
@@ -1200,7 +1200,7 @@ export const SEED_PRODUCTS: Product[] = [
     condition: "Good",
     era: "1980s",
     imageUrl:
-      "https://images.unsplash.com/photo-1532453288-0e29e0a56c7c?w=800&q=80",
+      "https://images.unsplash.com/photo-1525428262024-54ab5fbe3b5c?w=800&q=80",
     quantity: 1,
     isVintage: true,
     tags: ["punk", "leather", "studded", "80s"],
@@ -1217,7 +1217,7 @@ export const SEED_PRODUCTS: Product[] = [
     condition: "Very Good",
     era: "1990s",
     imageUrl:
-      "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800&q=80",
+      "https://images.unsplash.com/photo-1556227128-fb90d1cb46dd?w=800&q=80",
     quantity: 1,
     isVintage: true,
     tags: ["creepers", "platform", "goth", "90s"],
@@ -1353,7 +1353,7 @@ export const SEED_PRODUCTS: Product[] = [
     condition: "Good",
     era: "1980s",
     imageUrl:
-      "https://images.unsplash.com/photo-1552374781-9f14e05f2b6c?w=800&q=80",
+      "https://images.unsplash.com/photo-1584273143981-41c073dfe8f8?w=800&q=80",
     quantity: 1,
     isVintage: true,
     tags: ["power suit", "80s", "cobalt", "padded shoulders"],
