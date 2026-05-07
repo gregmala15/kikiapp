@@ -12,8 +12,6 @@ export interface Shop {
   email: string;
   followerCount: number;
   tags: string[];
-  // Optional indie-brand "Our Story" fields. Older listings may not have
-  // them; the shop page falls back gracefully to description-only.
   founded?: number;
   story?: string;
   highlights?: string[];
@@ -512,7 +510,7 @@ export const SEED_PRODUCTS: Product[] = [
     condition: "Very Good",
     era: "1990s",
     imageUrl:
-      "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=800&q=80",
+      "https://images.unsplash.com/photo-1566150905458-1bf1fc113f0d?w=800&q=80",
     quantity: 1,
     isVintage: true,
     tags: ["Gucci", "bamboo", "archive", "luxury"],
@@ -529,7 +527,7 @@ export const SEED_PRODUCTS: Product[] = [
     condition: "Excellent",
     era: "1980s",
     imageUrl:
-      "https://images.unsplash.com/photo-1601924994987-69e26d50dc26?w=800&q=80",
+      "https://images.unsplash.com/photo-1561713132-05b56b50e71b?w=800&q=80",
     quantity: 1,
     isVintage: true,
     tags: ["Fendi", "silk", "scarf", "Zucca"],
@@ -652,7 +650,7 @@ export const SEED_PRODUCTS: Product[] = [
     condition: "New with tags",
     era: "Contemporary",
     imageUrl:
-      "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=800&q=80",
+      "https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=800&q=80",
     quantity: 5,
     tags: ["leather", "tote", "handmade", "vegetable-tanned"],
   },
@@ -736,7 +734,7 @@ export const SEED_PRODUCTS: Product[] = [
     condition: "Good",
     era: "1990s",
     imageUrl:
-      "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800&q=80",
+      "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=800&q=80",
     quantity: 1,
     isVintage: true,
     tags: ["Nike", "Air Max", "90s", "sneakers"],
@@ -771,7 +769,7 @@ export const SEED_PRODUCTS: Product[] = [
     condition: "New with tags",
     era: "Contemporary",
     imageUrl:
-      "https://images.unsplash.com/photo-1562572159-4efc207f5aff?w=800&q=80",
+      "https://images.unsplash.com/photo-1508216310976-a9bfe3b96ba5?w=800&q=80",
     quantity: 4,
     tags: ["silk", "blouse", "open back", "ivory"],
   },
@@ -787,7 +785,7 @@ export const SEED_PRODUCTS: Product[] = [
     condition: "New with tags",
     era: "Contemporary",
     imageUrl:
-      "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=800&q=80",
+      "https://images.unsplash.com/photo-1467043237213-65f2da53396f?w=800&q=80",
     quantity: 2,
     tags: ["camel", "wool", "wrap coat", "minimal"],
   },
@@ -856,7 +854,7 @@ export const SEED_PRODUCTS: Product[] = [
     condition: "Good",
     era: "1990s",
     imageUrl:
-      "https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=800&q=80",
+      "https://images.unsplash.com/photo-1594035910387-fea47794261f?w=800&q=80",
     quantity: 1,
     isVintage: true,
     tags: ["platform", "boots", "90s", "gothic"],
@@ -875,7 +873,7 @@ export const SEED_PRODUCTS: Product[] = [
     condition: "Excellent",
     era: "1960s",
     imageUrl:
-      "https://images.unsplash.com/photo-1539008835657-9e8e9680c956?w=800&q=80",
+      "https://images.unsplash.com/photo-1483985988355-763728e1935b?w=800&q=80",
     quantity: 1,
     isVintage: true,
     tags: ["Biba", "archive", "60s", "Op-art"],
@@ -892,7 +890,7 @@ export const SEED_PRODUCTS: Product[] = [
     condition: "Good",
     era: "1970s",
     imageUrl:
-      "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=800&q=80",
+      "https://images.unsplash.com/photo-1445205170230-053b83016050?w=800&q=80",
     quantity: 1,
     isVintage: true,
     tags: ["Afghan coat", "70s", "sheepskin", "fringe"],
@@ -909,7 +907,7 @@ export const SEED_PRODUCTS: Product[] = [
     condition: "Very Good",
     era: "1960s",
     imageUrl:
-      "https://images.unsplash.com/photo-1583496661160-fb5886a0aaaa?w=800&q=80",
+      "https://images.unsplash.com/photo-1509629927083-3dea35a25f88?w=800&q=80",
     quantity: 1,
     isVintage: true,
     tags: ["psychedelic", "60s", "mini dress", "Carnaby"],
@@ -926,7 +924,7 @@ export const SEED_PRODUCTS: Product[] = [
     condition: "Very Good",
     era: "1970s",
     imageUrl:
-      "https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=800&q=80",
+      "https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?w=800&q=80",
     quantity: 1,
     isVintage: true,
     tags: ["Chelsea boots", "platform", "70s", "suede"],
@@ -943,7 +941,7 @@ export const SEED_PRODUCTS: Product[] = [
     condition: "Excellent",
     era: "1960s",
     imageUrl:
-      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80",
+      "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80",
     quantity: 1,
     isVintage: true,
     tags: ["mod", "blazer", "60s", "houndstooth"],
@@ -994,7 +992,7 @@ export const SEED_PRODUCTS: Product[] = [
     condition: "New with tags",
     era: "Contemporary",
     imageUrl:
-      "https://images.unsplash.com/photo-1583744946564-b52ac1c389c8?w=800&q=80",
+      "https://images.unsplash.com/photo-1560769629-975ec94e6a86?w=800&q=80",
     quantity: 12,
     tags: ["rugby shirt", "stripe", "oversized", "cobalt"],
   },
@@ -1012,7 +1010,7 @@ export const SEED_PRODUCTS: Product[] = [
     condition: "Very Good",
     era: "1990s",
     imageUrl:
-      "https://images.unsplash.com/photo-1516257984-b1b4d707412e?w=800&q=80",
+      "https://images.unsplash.com/photo-1523381294911-8d3cead13475?w=800&q=80",
     quantity: 1,
     isVintage: true,
     tags: ["Kente", "90s", "African print", "unique"],
@@ -1029,7 +1027,7 @@ export const SEED_PRODUCTS: Product[] = [
     condition: "Very Good",
     era: "1980s",
     imageUrl:
-      "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=800&q=80",
+      "https://images.unsplash.com/photo-1524863479829-916d8e77f114?w=800&q=80",
     quantity: 1,
     isVintage: true,
     tags: ["shell suit", "80s", "neon", "sports"],
@@ -1046,7 +1044,7 @@ export const SEED_PRODUCTS: Product[] = [
     condition: "Very Good",
     era: "1970s-80s",
     imageUrl:
-      "https://images.unsplash.com/photo-1614676471928-2ed0ad1061a4?w=800&q=80",
+      "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=800&q=80",
     quantity: 1,
     isVintage: true,
     tags: ["embroidered", "silk", "sari", "gold"],
@@ -1082,7 +1080,7 @@ export const SEED_PRODUCTS: Product[] = [
     condition: "Very Good",
     era: "1960s",
     imageUrl:
-      "https://images.unsplash.com/photo-1539008835657-9e8e9680c956?w=800&q=80",
+      "https://images.unsplash.com/photo-1514995669114-6081e934b693?w=800&q=80",
     quantity: 1,
     isVintage: true,
     tags: ["boucle", "shift dress", "60s", "pastel"],
@@ -1099,7 +1097,7 @@ export const SEED_PRODUCTS: Product[] = [
     condition: "Excellent",
     era: "1970s",
     imageUrl:
-      "https://images.unsplash.com/photo-1583496661160-fb5886a0aaaa?w=800&q=80",
+      "https://images.unsplash.com/photo-1485462537746-965f33f8f2db?w=800&q=80",
     quantity: 1,
     isVintage: true,
     tags: ["maxi dress", "floral", "70s", "Liberty print"],
@@ -1116,7 +1114,7 @@ export const SEED_PRODUCTS: Product[] = [
     condition: "Excellent",
     era: "1960s",
     imageUrl:
-      "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=800&q=80",
+      "https://images.unsplash.com/photo-1558769132-cb1aea458c5e?w=800&q=80",
     quantity: 1,
     isVintage: true,
     tags: ["Mary Quant", "archive", "60s", "vinyl"],
@@ -1133,7 +1131,7 @@ export const SEED_PRODUCTS: Product[] = [
     condition: "Good",
     era: "1970s",
     imageUrl:
-      "https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=800&q=80",
+      "https://images.unsplash.com/photo-1509925586452-04eba7d6fd70?w=800&q=80",
     quantity: 1,
     isVintage: true,
     tags: ["knee boots", "suede", "70s", "caramel"],
@@ -1152,7 +1150,7 @@ export const SEED_PRODUCTS: Product[] = [
     condition: "New with tags",
     era: "Contemporary",
     imageUrl:
-      "https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=800&q=80",
+      "https://images.unsplash.com/photo-1567113463300-102a7eb3cb26?w=800&q=80",
     quantity: 4,
     tags: ["knit", "merino", "oatmeal", "handmade"],
   },
@@ -1168,7 +1166,7 @@ export const SEED_PRODUCTS: Product[] = [
     condition: "New with tags",
     era: "Contemporary",
     imageUrl:
-      "https://images.unsplash.com/photo-1601924994987-69e26d50dc26?w=800&q=80",
+      "https://images.unsplash.com/photo-1524535359-1a5498c4fa29?w=800&q=80",
     quantity: 8,
     tags: ["linen", "woven", "scarf", "natural"],
   },
@@ -1184,7 +1182,7 @@ export const SEED_PRODUCTS: Product[] = [
     condition: "New with tags",
     era: "Contemporary",
     imageUrl:
-      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80",
+      "https://images.unsplash.com/photo-1573007974656-b958089e9f7b?w=800&q=80",
     quantity: 6,
     tags: ["linen", "shirt", "collarless", "handmade"],
   },
@@ -1202,7 +1200,7 @@ export const SEED_PRODUCTS: Product[] = [
     condition: "Good",
     era: "1980s",
     imageUrl:
-      "https://images.unsplash.com/photo-1516257984-b1b4d707412e?w=800&q=80",
+      "https://images.unsplash.com/photo-1532453288-0e29e0a56c7c?w=800&q=80",
     quantity: 1,
     isVintage: true,
     tags: ["punk", "leather", "studded", "80s"],
@@ -1219,7 +1217,7 @@ export const SEED_PRODUCTS: Product[] = [
     condition: "Very Good",
     era: "1990s",
     imageUrl:
-      "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800&q=80",
+      "https://images.unsplash.com/photo-1548078245-9a1c71d8b3a6?w=800&q=80",
     quantity: 1,
     isVintage: true,
     tags: ["creepers", "platform", "goth", "90s"],
@@ -1236,7 +1234,7 @@ export const SEED_PRODUCTS: Product[] = [
     condition: "Good",
     era: "1990s",
     imageUrl:
-      "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800&q=80",
+      "https://images.unsplash.com/photo-1522937955-6226b8a3ef9d?w=800&q=80",
     quantity: 1,
     isVintage: true,
     tags: ["band tee", "90s", "metal", "vintage"],
@@ -1253,7 +1251,7 @@ export const SEED_PRODUCTS: Product[] = [
     condition: "Very Good",
     era: "2000s",
     imageUrl:
-      "https://images.unsplash.com/photo-1583496661160-fb5886a0aaaa?w=800&q=80",
+      "https://images.unsplash.com/photo-1471286174890-9c112c592d32?w=800&q=80",
     quantity: 1,
     isVintage: true,
     tags: ["Y2K", "vinyl", "mini skirt", "2000s"],
@@ -1272,7 +1270,7 @@ export const SEED_PRODUCTS: Product[] = [
     condition: "Excellent",
     era: "2000s",
     imageUrl:
-      "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=800&q=80",
+      "https://images.unsplash.com/photo-1560243563-062bfc001d68?w=800&q=80",
     quantity: 1,
     tags: ["Burberry", "luxury", "pre-loved", "authenticated"],
   },
@@ -1288,7 +1286,7 @@ export const SEED_PRODUCTS: Product[] = [
     condition: "Excellent",
     era: "2010s",
     imageUrl:
-      "https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=800&q=80",
+      "https://images.unsplash.com/photo-1506629082955-511b1aa562c8?w=800&q=80",
     quantity: 1,
     tags: ["Loro Piana", "cashmere", "luxury", "ivory"],
   },
@@ -1304,7 +1302,7 @@ export const SEED_PRODUCTS: Product[] = [
     condition: "Excellent",
     era: "2010s",
     imageUrl:
-      "https://images.unsplash.com/photo-1601924994987-69e26d50dc26?w=800&q=80",
+      "https://images.unsplash.com/photo-1557821552-17105176677c?w=800&q=80",
     quantity: 1,
     tags: ["Hermès", "silk", "scarf", "equestrian"],
   },
@@ -1320,7 +1318,7 @@ export const SEED_PRODUCTS: Product[] = [
     condition: "New with tags",
     era: "Contemporary",
     imageUrl:
-      "https://images.unsplash.com/photo-1551854838-212c9e876c88?w=800&q=80",
+      "https://images.unsplash.com/photo-1519345182560-3f2917c472ef?w=800&q=80",
     quantity: 5,
     tags: ["linen", "trousers", "ivory", "wide-leg"],
   },
@@ -1338,7 +1336,7 @@ export const SEED_PRODUCTS: Product[] = [
     condition: "Very Good",
     era: "1970s",
     imageUrl:
-      "https://images.unsplash.com/photo-1514995669114-6081e934b693?w=800&q=80",
+      "https://images.unsplash.com/photo-1468657988500-4c890f44b82b?w=800&q=80",
     quantity: 1,
     isVintage: true,
     tags: ["disco", "70s", "metallic", "jumpsuit"],
@@ -1355,7 +1353,7 @@ export const SEED_PRODUCTS: Product[] = [
     condition: "Good",
     era: "1980s",
     imageUrl:
-      "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=800&q=80",
+      "https://images.unsplash.com/photo-1552374781-9f14e05f2b6c?w=800&q=80",
     quantity: 1,
     isVintage: true,
     tags: ["power suit", "80s", "cobalt", "padded shoulders"],
@@ -1372,7 +1370,7 @@ export const SEED_PRODUCTS: Product[] = [
     condition: "Good",
     era: "1990s",
     imageUrl:
-      "https://images.unsplash.com/photo-1521369909029-2afed882baee?w=800&q=80",
+      "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&q=80",
     quantity: 1,
     isVintage: true,
     tags: ["rave", "bucket hat", "90s", "tie-dye"],
@@ -1389,7 +1387,7 @@ export const SEED_PRODUCTS: Product[] = [
     condition: "Very Good",
     era: "1970s",
     imageUrl:
-      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80",
+      "https://images.unsplash.com/photo-1567401893414-76b7b1e5a7a5?w=800&q=80",
     quantity: 1,
     isVintage: true,
     tags: ["velvet", "blazer", "70s", "midnight blue"],
@@ -1406,7 +1404,7 @@ export const SEED_PRODUCTS: Product[] = [
     condition: "Very Good",
     era: "1980s",
     imageUrl:
-      "https://images.unsplash.com/photo-1469334031218-e382a71b716b?w=800&q=80",
+      "https://images.unsplash.com/photo-1572804013427-4d7ca7268217?w=800&q=80",
     quantity: 1,
     isVintage: true,
     tags: ["sequin", "80s", "party dress", "gold"],
@@ -1532,11 +1530,6 @@ export const SEED_RECOMMENDATIONS: ProductRecommendation[] = [
   },
 ];
 
-// SEED_USER_LIKES — what each seeded community user has saved/liked.
-// Used by the Style Blend feature: when the current user adds a friend as
-// a "style influence", their feed gets boosted with these products.
-// Assignments are deterministic and reflect each user's bio so the influence
-// feels personal (e.g. Mira → Y2K era, Luca → Archive / Rare).
 export const SEED_USER_LIKES: Record<string, string[]> = {
   "user-aria": [
     "prod-001",
@@ -1590,8 +1583,6 @@ export const SEED_USER_LIKES: Record<string, string[]> = {
   ],
 };
 
-// Returns the list of product IDs liked by a given seed user. Empty array if
-// the user has no recorded likes (e.g. the current user themselves).
 export function getLikesForUser(userId: string): string[] {
   return SEED_USER_LIKES[userId] ?? [];
 }
@@ -1621,18 +1612,12 @@ export function getRecommendationsFromUsers(
   );
 }
 
-// Recommendations sent BY a single user (for showing on their profile).
 export function getRecommendationsByUser(
   userId: string,
 ): ProductRecommendation[] {
   return SEED_RECOMMENDATIONS.filter((r) => r.recommenderId === userId);
 }
 
-// -----------------------------------------------------------------------------
-// Tiny deterministic string hash — stable across renders and reloads.
-// Used wherever we need a reproducible "random" pick for a given user id
-// (e.g. the followers mock below). Not cryptographic — just a spread function.
-// -----------------------------------------------------------------------------
 function hashUserId(s: string): number {
   let h = 2166136261;
   for (let i = 0; i < s.length; i++) {
@@ -1642,29 +1627,16 @@ function hashUserId(s: string): number {
   return h >>> 0;
 }
 
-// -----------------------------------------------------------------------------
-// Followers mock — deterministic per-user list.
-// In a real backend this would be a relational query; for the report demo we
-// derive a stable subset of SEED_USERS keyed off the target user's id, so the
-// numbers/lists stay identical across renders, reloads, and account switches.
-// Excludes the user themselves. The size of the returned list is between
-// 2 and (pool.length) inclusive, deterministically picked from the user-id
-// hash so each profile gets a different but stable follower count.
-// -----------------------------------------------------------------------------
 export function getFollowersForUser(userId: string): CommunityUser[] {
   const pool = SEED_USERS.filter((u) => u.id !== userId);
   if (pool.length === 0) return [];
   const h = hashUserId(userId);
-  // 2..pool.length followers, deterministic.
   const count = Math.max(2, Math.min(pool.length, (h % pool.length) + 2));
   const start = h % pool.length;
   const rotated = [...pool.slice(start), ...pool.slice(0, start)];
   return rotated.slice(0, count);
 }
 
-// Style tags for a user — derived from the tags of products they've liked.
-// Counts tag frequency and returns the top N most common, so a user's
-// "style tags" actually reflect their taste rather than being hard-coded.
 export function getStyleTagsForUser(
   userId: string,
   limit: number = 5,
@@ -1682,10 +1654,9 @@ export function getStyleTagsForUser(
     .map(([tag]) => tag);
 }
 
-// Followed-shops count mock for non-current users — deterministic per user id.
 export function getFollowedShopsCountForUser(userId: string): number {
   const h = hashUserId(userId);
-  return (h % 6) + 1; // 1..6 shops
+  return (h % 6) + 1;
 }
 
 export function getHiddenGemShops(): Shop[] {
@@ -1697,19 +1668,14 @@ export function getHiddenGemProducts(): Product[] {
   return SEED_PRODUCTS.filter((p) => hiddenGemShopIds.includes(p.shopId));
 }
 
-// ───────────────────────── Reviews ─────────────────────────
-// Buyer-verified shop reviews. In the live app a user can only post a
-// review for a shop they've placed an order with; the AppContext gates
-// addReview with hasPurchasedFromShop. SEED_REVIEWS represents historical
-// buyers whose orders aren't stored in this build's local AsyncStorage.
 export interface Review {
   id: string;
   shopId: string;
   userId: string;
   userName: string;
-  rating: number; // 1-5
+  rating: number;
   body: string;
-  createdAt: string; // ISO
+  createdAt: string;
   productId?: string;
   productTitle?: string;
 }
@@ -1734,7 +1700,7 @@ export const SEED_REVIEWS: Review[] = [
     body: "Cashmere turtleneck is the real thing — substantial but not heavy. Made-to-order really shows.",
     createdAt: "2026-03-19T16:20:00Z", productId: "prod-007", productTitle: "Cashmere Turtleneck" },
 
-  // Pietra Dura (shop-rome-5) — leather artisan
+  // Pietra Dura (shop-rome-5)
   { id: "rev-6", shopId: "shop-rome-5", userId: "user-luca", userName: "Luca Marchetti", rating: 5,
     body: "Got my belt resized for free six months after buying. Giorgio remembered the order. This is what artisan means.",
     createdAt: "2026-04-22T10:00:00Z" },

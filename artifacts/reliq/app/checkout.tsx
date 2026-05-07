@@ -198,21 +198,17 @@ export default function CheckoutScreen() {
           </View>
         </View>
 
-        <View style={styles.mockNote}>
-          <Feather name="info" size={14} color={Colors.accent} />
-          <Text style={styles.mockText}>
-            This is a prototype. No real payment is processed.
-          </Text>
-        </View>
-
         <Text style={[styles.sectionLabel, { marginTop: 28 }]}>
           Payment
         </Text>
         <View style={styles.paymentCard}>
-          <Feather name="credit-card" size={20} color={Colors.textSecondary} />
-          <Text style={styles.paymentText}>Simulated payment — no charge</Text>
-          <View style={styles.paymentBadge}>
-            <Text style={styles.paymentBadgeText}>DEMO</Text>
+          <Feather name="credit-card" size={22} color={Colors.text} />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.paymentCardBrand}>Visa</Text>
+            <Text style={styles.paymentCardNumber}>•••• •••• •••• 4242</Text>
+          </View>
+          <View style={styles.paymentCardExpiry}>
+            <Text style={styles.paymentCardExpiryText}>12/27</Text>
           </View>
         </View>
       </ScrollView>
@@ -354,48 +350,42 @@ const styles = StyleSheet.create({
     color: Colors.text,
   },
   row: { flexDirection: "row", gap: 12 },
-  mockNote: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    backgroundColor: Colors.accentLight,
-    padding: 12,
-    borderRadius: 8,
-    marginTop: 20,
-  },
-  mockText: {
-    fontFamily: "Inter_400Regular",
-    fontSize: 12,
-    color: Colors.accentDark,
-    flex: 1,
-  },
   paymentCard: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: 14,
     backgroundColor: Colors.surface,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: Colors.border,
     padding: 16,
   },
-  paymentText: {
-    flex: 1,
-    fontFamily: "Inter_400Regular",
-    fontSize: 14,
+  paymentCardBrand: {
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 11,
     color: Colors.textSecondary,
+    letterSpacing: 0.5,
+    textTransform: "uppercase",
+    marginBottom: 3,
   },
-  paymentBadge: {
+  paymentCardNumber: {
+    fontFamily: "Inter_500Medium",
+    fontSize: 15,
+    color: Colors.text,
+    letterSpacing: 2,
+  },
+  paymentCardExpiry: {
     backgroundColor: Colors.card,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
-  paymentBadgeText: {
-    fontFamily: "Inter_700Bold",
-    fontSize: 10,
+  paymentCardExpiryText: {
+    fontFamily: "Inter_500Medium",
+    fontSize: 12,
     color: Colors.textSecondary,
-    letterSpacing: 1,
   },
   footer: {
     position: "absolute",
