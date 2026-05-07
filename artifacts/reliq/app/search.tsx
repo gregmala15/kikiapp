@@ -41,6 +41,7 @@ const ERAS = ["Y2K", "90s", "80s", "70s", "60s", "Contemporary"];
 const TRENDING = ["Vintage Levis", "Archive", "Y2K", "Italian leather", "Rome"];
 const RECENT_KEY = "kiki:recent_searches";
 const VERIFIED_THRESHOLD = 2500;
+const MIN_QUERY_LEN = 3;
 
 interface SearchResults {
   products: Product[];
@@ -135,9 +136,12 @@ export default function SearchScreen() {
   const [tab, setTab] = useState<SearchTab>("items");
   const topPad = Platform.OS === "web" ? 67 : insets.top;
 
-  // Debounce input by 300ms
+  // Debounce input by 300ms. Treat queries shorter than 3 chars as empty
+  // so we don't show noisy "match anything containing 'a'" results.
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedQuery(query), 300);
+    const t = setTimeout(() => {
+      setDebouncedQuery(query.trim().length < MIN_QUERY_LEN ? "" : query);
+    }, 300);
     return () => clearTimeout(t);
   }, [query]);
 
@@ -360,6 +364,17 @@ export default function SearchScreen() {
                     </Pressable>
                   ))}
                 </View>
+              </View>
+            )}
+
+            {/* KEEP TYPING — user has 1-2 chars, debounce is holding back */}
+            {!hasQuery && query.trim().length > 0 && (
+              <View style={styles.noResults}>
+                <Feather name="edit-3" size={28} color={Colors.textTertiary} />
+                <Text style={styles.noResultsTitle}>Keep typing</Text>
+                <Text style={styles.noResultsSub}>
+                  Enter at least {MIN_QUERY_LEN} letters to search
+                </Text>
               </View>
             )}
 
