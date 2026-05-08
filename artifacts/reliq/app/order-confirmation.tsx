@@ -12,7 +12,9 @@ import { Feather } from "@expo/vector-icons";
 import Colors from "@/constants/colors";
 import { useAppContext } from "@/contexts/AppContext";
 
-const STATUSES = [
+type FeatherIconName = React.ComponentProps<typeof Feather>["name"];
+
+const STATUSES: Array<{ key: string; label: string; icon: FeatherIconName }> = [
   { key: "created", label: "Order Created", icon: "check-circle" },
   { key: "label_created", label: "Label Created", icon: "printer" },
   { key: "shipped", label: "Shipped", icon: "truck" },
@@ -98,7 +100,7 @@ export default function OrderConfirmationScreen() {
                   ]}
                 >
                   <Feather
-                    name={status.icon as any}
+                    name={status.icon}
                     size={14}
                     color={isActive ? "#fff" : Colors.textTertiary}
                   />
@@ -125,6 +127,7 @@ export default function OrderConfirmationScreen() {
         </View>
       </View>
 
+      <View style={{ flex: 1 }} />
       <View style={styles.buttons}>
         <Pressable
           style={styles.ordersBtn}
@@ -282,7 +285,7 @@ const styles = StyleSheet.create({
     zIndex: -1,
   },
   statusLineActive: { backgroundColor: Colors.textSecondary },
-  buttons: { width: "100%", gap: 12, marginTop: "auto" as any },
+  buttons: { width: "100%", gap: 12 },
   ordersBtn: {
     flexDirection: "row",
     alignItems: "center",

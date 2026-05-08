@@ -8,6 +8,7 @@ import {
   Alert,
   Platform,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather, Ionicons } from "@expo/vector-icons";
@@ -44,6 +45,29 @@ export default function ProfileScreen() {
       },
     ]);
   }
+
+  function handleResetDemo() {
+    Alert.alert(
+      "Reset demo data",
+      "This will wipe all your activity and re-seed fresh demo data on next login.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Reset",
+          style: "destructive",
+          onPress: async () => {
+            const keys = await AsyncStorage.getAllKeys();
+            const demoKeys = keys.filter((k) => k.startsWith("kiki_"));
+            await AsyncStorage.multiRemove(demoKeys);
+            await logout();
+            router.replace("/(auth)/welcome");
+          },
+        },
+      ]
+    );
+  }
+
+  const isDemoAccount = user?.id?.startsWith("demo-");
 
   const followedShops = followedShopIds
     .map((id) => SEED_SHOPS.find((s) => s.id === id))
@@ -243,6 +267,16 @@ export default function ProfileScreen() {
           <Feather name="chevron-right" size={16} color={Colors.textTertiary} />
         </Pressable>
         <View style={styles.menuDivider} />
+        {isDemoAccount && (
+          <>
+            <Pressable style={styles.menuRow} onPress={handleResetDemo}>
+              <Feather name="refresh-cw" size={20} color={Colors.textSecondary} />
+              <Text style={styles.menuText}>Reset Demo Data</Text>
+              <Feather name="chevron-right" size={16} color={Colors.textTertiary} />
+            </Pressable>
+            <View style={styles.menuDivider} />
+          </>
+        )}
         <Pressable style={styles.menuRow} onPress={handleLogout}>
           <Feather name="log-out" size={20} color={Colors.danger} />
           <Text style={[styles.menuText, { color: Colors.danger }]}>Sign Out</Text>

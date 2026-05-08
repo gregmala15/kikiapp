@@ -6,6 +6,7 @@ import React, {
   ReactNode,
 } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { SOPHIE_STORAGE_PAIRS, VAULT_STORAGE_PAIRS } from "@/constants/demo-seed";
 
 export type AccountType = "user" | "shop";
 
@@ -17,6 +18,44 @@ export interface UserProfile {
   bio?: string;
   avatar?: string;
   shopId?: string;
+}
+
+// ─── Investor demo accounts ──────────────────────────────────────────────────
+// Hardcoded so they work on a fresh device with no prior registration.
+// Seeded with rich pre-populated state so every screen shows real content.
+
+const DEMO_ACCOUNTS: Record<string, UserProfile & { password: string }> = {
+  "demo-sophie": {
+    id: "demo-sophie",
+    username: "sophie_chen",
+    email: "sophie@demo.reliq",
+    accountType: "user",
+    bio: "Vintage hunter based in London. Obsessed with 60s mod and Italian archive.",
+    password: "reliq2024",
+  },
+  "demo-vault": {
+    id: "demo-vault",
+    username: "The Vault London",
+    email: "vault@demo.reliq",
+    accountType: "shop",
+    bio: "Curated rare vintage from the 60s–90s. Portobello Road.",
+    password: "reliq2024",
+  },
+};
+
+const DEMO_SEED_MAP: Record<string, Array<[string, string]>> = {
+  "demo-sophie": SOPHIE_STORAGE_PAIRS,
+  "demo-vault": VAULT_STORAGE_PAIRS,
+};
+
+async function seedDemoStateIfNeeded(userId: string) {
+  const pairs = DEMO_SEED_MAP[userId];
+  if (!pairs) return;
+  const flag = `kiki_demo_seeded_${userId}`;
+  const already = await AsyncStorage.getItem(flag);
+  if (already) return;
+  await AsyncStorage.multiSet(pairs);
+  await AsyncStorage.setItem(flag, "1");
 }
 
 interface AuthContextValue {
@@ -69,6 +108,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function login(email: string, password: string) {
+    // Check demo accounts before AsyncStorage so they work on any fresh device.
+    const demoAccount = Object.values(DEMO_ACCOUNTS).find(
+      (a) => a.email.toLowerCase() === email.toLowerCase()
+    );
+    if (demoAccount) {
+      if (demoAccount.password !== password) throw new Error("Incorrect password.");
+      const { password: _, ...profile } = demoAccount;
+      await seedDemoStateIfNeeded(profile.id);
+      setUser(profile);
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
+      return;
+    }
+
     const accounts = await getAccounts();
     const account = Object.values(accounts).find(
       (a) => a.email.toLowerCase() === email.toLowerCase()

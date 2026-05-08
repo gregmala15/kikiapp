@@ -5,7 +5,6 @@ import {
   StyleSheet,
   Pressable,
   ScrollView,
-  Alert,
   Dimensions,
   Platform,
 } from "react-native";
@@ -25,7 +24,7 @@ export default function ProductDetailScreen() {
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user } = useAuth();
-  const { isSaved, toggleSaved, addToCart, sendMessage, cartCount, showSaveToast } = useAppContext();
+  const { isSaved, toggleSaved, addToCart, sendMessage, cartCount, showSaveToast, showCartToast } = useAppContext();
   const [messageText, setMessageText] = useState("");
 
   const product = SEED_PRODUCTS.find((p) => p.id === id);
@@ -58,7 +57,7 @@ export default function ProductDetailScreen() {
   function handleAddToCart() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     addToCart(product!);
-    Alert.alert("Added to cart", `${product!.title} has been added to your bag.`);
+    showCartToast(product!.title, product!.imageUrl);
   }
 
   async function handleMessageShop() {

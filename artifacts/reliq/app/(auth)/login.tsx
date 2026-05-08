@@ -115,6 +115,33 @@ export default function LoginScreen() {
           </Pressable>
         </View>
 
+        <View style={styles.demoSection}>
+          <View style={styles.demoRow}>
+            <View style={styles.demoDivider} />
+            <Text style={styles.demoLabel}>Demo accounts</Text>
+            <View style={styles.demoDivider} />
+          </View>
+          <View style={styles.demoCards}>
+            <Pressable
+              style={({ pressed }) => [styles.demoCard, pressed && styles.demoCardPressed]}
+              onPress={() => { setEmail("sophie@demo.reliq"); setPassword("reliq2024"); }}
+            >
+              <Text style={styles.demoCardTitle}>Sophie</Text>
+              <Text style={styles.demoCardRole}>Shopper</Text>
+              <Text style={styles.demoCardEmail}>sophie@demo.reliq</Text>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [styles.demoCard, pressed && styles.demoCardPressed]}
+              onPress={() => { setEmail("vault@demo.reliq"); setPassword("reliq2024"); }}
+            >
+              <Text style={styles.demoCardTitle}>The Vault</Text>
+              <Text style={styles.demoCardRole}>Shop Owner</Text>
+              <Text style={styles.demoCardEmail}>vault@demo.reliq</Text>
+            </Pressable>
+          </View>
+          <Text style={styles.demoHint}>Tap a card to fill in credentials, then sign in</Text>
+        </View>
+
         <View style={styles.footer}>
           <Text style={styles.footerText}>Don't have an account?</Text>
           <Pressable onPress={() => router.replace("/(auth)/register")}>
@@ -198,7 +225,7 @@ const styles = StyleSheet.create({
   footer: {
     flexDirection: "row",
     justifyContent: "center",
-    marginTop: 32,
+    marginTop: 28,
   },
   footerText: {
     fontFamily: "Inter_400Regular",
@@ -209,5 +236,50 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_600SemiBold",
     fontSize: 14,
     color: Colors.text,
+  },
+  demoSection: { marginTop: 36, gap: 16 },
+  demoRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  demoDivider: { flex: 1, height: 1, backgroundColor: Colors.border },
+  demoLabel: {
+    fontFamily: "Inter_400Regular",
+    fontSize: 11,
+    color: Colors.textTertiary,
+    letterSpacing: 1,
+    textTransform: "uppercase",
+  },
+  demoCards: { flexDirection: "row", gap: 12 },
+  demoCard: {
+    flex: 1,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 10,
+    padding: 14,
+    gap: 3,
+  },
+  demoCardPressed: { opacity: 0.75 },
+  demoCardTitle: {
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 14,
+    color: Colors.text,
+  },
+  demoCardRole: {
+    fontFamily: "Inter_400Regular",
+    fontSize: 11,
+    color: Colors.accent,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  demoCardEmail: {
+    fontFamily: "Inter_400Regular",
+    fontSize: 11,
+    color: Colors.textTertiary,
+    marginTop: 4,
+  },
+  demoHint: {
+    fontFamily: "Inter_400Regular",
+    fontSize: 12,
+    color: Colors.textTertiary,
+    textAlign: "center",
   },
 });

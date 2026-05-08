@@ -56,7 +56,7 @@ export default function ShopInboxScreen() {
               <Pressable
                 key={c.id}
                 style={styles.row}
-                onPress={() => router.push(`/conversation/${c.id}` as any)}
+                onPress={() => router.push({ pathname: "/conversation/[id]", params: { id: c.id } })}
               >
                 <View style={styles.avatar}>
                   <Text style={styles.avatarText}>

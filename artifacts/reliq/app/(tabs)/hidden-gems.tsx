@@ -43,7 +43,6 @@ const CATEGORIES: Array<"all" | ProductCategory> = [
 function FeaturedGem({ product }: { product: Product }) {
   const { isSaved, toggleSaved, showSaveToast } = useAppContext();
   const saved = isSaved(product.id);
-  const import_shop = product.shopId;
 
   return (
     <Pressable
